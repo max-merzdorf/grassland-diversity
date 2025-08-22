@@ -1,0 +1,154 @@
+library(terra)
+library(rasterdiv)
+library(GLCMTextures)
+library(stringr)
+
+### Quick NDVI:
+calc_ndvi <- function(red, nir){
+  ndvi <- (nir-red) / (nir+red)
+  return(ndvi)
+}
+
+### Clip a list of UAV raster images to a matching subplot sf feature:
+clip_to_subplot <- function(img_list, subplot_feature){
+  res_stack <- terra::rast()
+  for (i in 1:length(img_list)){
+    site_raster <- terra::rast(img_list[i])
+    subplot_raster <- terra::crop(site_raster, subplot_feature)
+    res_stack <- c(res_stack, subplot_raster)
+    # NOTE: this will throw a warning that the first raster is empty, ignore!
+  }
+  return(res_stack)
+}
+
+### Aggregate a SpatRaster with multiple layers with a defined factor and function
+agg_my_rasters <- function(rstack, mfact, mfun){
+  res <- rast()
+  for (i in 1:nlyr(rstack)){
+    agged <- terra::aggregate(rstack[[i]], fact=mfact, fun=mfun)
+    res <- c(res, agged)
+  }
+  return(res)
+}
+
+### Calculate GLCM metrics for a SpatRaster with multiple bands, return a SpatRaster
+#   with named layers
+
+calc_spat_metrics <- function(myraster){
+  result <- terra::rast()
+  
+  for (i in 1:nlyr(myraster)){
+    lyr <- myraster[[i]]
+    lyrname <- names(lyr) # to name metrics
+    mets <- GLCMTextures::glcm_textures(r = lyr,
+                                        n_levels=16,
+                                        metrics = c("glcm_entropy", "glcm_mean", "glcm_dissimilarity"),
+                                        quant_method = "range")
+    metric_names <- paste0(lyrname,"_",names(mets))
+    names(mets) <- metric_names
+    result <- c(result, mets)
+  }
+  return(result)
+}
+
+### Calculate sd and mean for each raster and return result as df
+
+# DEPRECATED use v2 instead:
+#metrics_sd_mean <- function(metric_raster){
+#  result <- c()
+#  for (i in 1:nlyr(metric_raster)){
+#    msd <- sd(values(metric_raster[[i]]), na.rm = T)
+#    mmean <- mean(values(metric_raster[[i]]), na.rm=T)
+#    msd_name <- paste0(names(metric_raster[[i]]), "_sd")
+#    mmean_name <- paste0(names(metric_raster[[i]]), "_mean")
+#    result <- c(result, msd, msd_name, mmean, mmean_name)
+#  }
+  # Better to return a 2 row dataframe with every band/metric/sd/mean combo per column
+  # so nrow= # of layers in metric_raster / 4 (bands per img) / 3 (metrics per img)
+#  res_df <- data.frame(matrix(result, nrow=nlyr(metric_raster)/4/3, byrow=F))
+#  return(res_df)
+#}
+
+# make it so the returned df has nrow = nlyr(raster)/4(bands)/3(metrics per band)
+# -> 1 row per month -> easier to get timeseries
+# -> namevector for colnames
+metrics_sd_mean_v2 <- function(metric_raster, n_bands=4){
+  result <- c()
+  cnames <- c()
+  rnames <- c()
+  for (i in 1:nlyr(metric_raster)){
+    msd <- sd(values(metric_raster[[i]]), na.rm = T)
+    mmean <- mean(values(metric_raster[[i]]), na.rm=T)
+    msd_name <- paste0(names(metric_raster[[i]]), "_sd")
+    mmean_name <- paste0(names(metric_raster[[i]]), "_mean")
+    result <- c(result, msd, mmean)
+    cnames <- c(cnames, substr(msd_name, 10, 100), substr(mmean_name, 10, 100))
+    cnames <- gsub("_orthomosaic", "", cnames)
+    rnames <- c(rnames, substr(msd_name, 1, 8), substr(mmean_name, 1, 8))
+  }
+  # Better to return a 2 row dataframe with every band/metric/sd/mean combo per column
+  # so nrow= # of layers in metric_raster / 4 (bands per img) / 3 (metrics per img)
+  res_df <- data.frame(matrix(result, nrow=nlyr(metric_raster)/n_bands/3, byrow=F))
+  colnames(res_df) <- unique(cnames)
+  rownames(res_df) <- unique(rnames)
+  
+  return(res_df)
+}
+
+
+
+### LINEAR MODEL FUNCTIONS
+species_linear_modeling <- function(png_name, metric_df, y_var, time_intervals, n_bands){
+  
+  # metric_df: generated from metrics_sd_mean_v2(), one column per metric/band/sd-mean combo,
+  #   one row per time interval (=timestep)
+  # y_var: vector of length(time_intervals) or dataframe with ncol() == time_intervals
+  #   with recorded species per site per run or other variable
+  # time_intervals: vector with times for the data, e.g. c(1,2) for a two-time measured relation,
+  #   but if data is from april, may, aug, sep then: c(1,2,4,5) to make gaps
+  
+  if (nrow(metric_df) != length(time_intervals)) {
+    stop("Number of rows in metric_df does not match time_intervals")
+  }
+  
+  # arrange the graph.dev grid: 1 row per band, 1 col per metric / sd-mean combo:
+  graph_rows <- n_bands
+  graph_cols <- ncol(metric_df) / n_bands
+  
+  # MAKE LINEAR MODELS AND COMPARE COEFFICIENTS:
+  # lm for species abundance / fractional cover / etc.
+  y_linmod <- lm(y_var ~ time_intervals)
+  y_linmod_slope <- coef(y_linmod)["time_intervals"] # slope of species / frac.cover / etc
+  
+  # lm for GLCM metric values (non-normalized output)
+  x_linmod <- lapply(metric_df, function(col) lm(col ~ time_intervals)) # list of lm's
+  x_linmod_slopes <- sapply(x_linmod, function(x) coef(x)["time_intervals"]) # list of slopes
+  slopes_diff <- abs(x_linmod_slopes - y_linmod_slope)
+  x_linmod_sorted <- x_linmod[order(slopes_diff)] # obsolete?
+  result <- data.frame(slopes_diff = slopes_diff, slope = x_linmod_slopes)
+
+  ### write image with centered data for slope comparability:
+  # center data and create centered linmods:
+  y_centered <- y_var - mean(y_var)
+  y_linmod_centered <- lm(y_centered ~ time_intervals)
+  # center each column of x individually:
+  x_centered <- x_centered <- as.data.frame(scale(metric_df, center = TRUE, scale = FALSE))
+  x_linmod_centered <- lapply(x_centered, function(col) lm(col ~ time_intervals))
+  
+  
+  png(filename = png_name, height = graph_rows*300, width = graph_cols*400, res = 200)
+  par(mfrow = c(graph_rows, graph_cols))
+  
+  for (i in 1:ncol(metric_df)){
+    plot(metric_df[,i],
+         ylim=c(0, max(metric_df)),
+         xlab = "time",
+         ylab="value",
+         main=colnames(metric_df)[i])
+    abline(reg = x_linmod_centered[[i]], col = "red")
+    abline(reg = y_linmod_centered, col = "blue")
+  }
+  dev.off()
+  
+  return(result)
+}

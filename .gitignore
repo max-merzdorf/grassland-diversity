@@ -1,0 +1,16 @@
+# R specific files
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+*.Rproj
+
+# any images or MS office files
+*.png
+*.docx
+*.pptx
+
+# folders
+data/
+docs/
+images/
