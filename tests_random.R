@@ -19,3 +19,6 @@ join <- st_join(subplots, y = plots, join = st_intersects)
 img <- terra::rast("./data/_raster/site8_202409812_aligned.tif")
 plot(img[[3]])
 plotRGB(img, r=3,g=2,b=1, stretch="lin")
+
+### test how to buffer the texture metric data frame with empty june row
+

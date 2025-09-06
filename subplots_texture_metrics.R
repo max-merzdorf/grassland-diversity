@@ -17,7 +17,7 @@ source("./helper_functions.R")
 ##### SITE 8 PROCESSING #####
 
 # gather all images as one rastestack:
-s8imgs <- list.files("./data/_raster/", pattern = "site8_*", full.names = T)
+s8imgs <- list.files("./data/_raster/", pattern = "^site8_.*\\.tif$", full.names = T)
 s8raster<- terra::rast(s8imgs[1])
 s8stack <- rast()
 # read, clip and stack every image tu the corresponding subplot feature:
@@ -103,7 +103,6 @@ met_s14_apr <- calc_spat_metrics(myraster = s14_subplots)
 s14_apr_jul_metrics <- c(met_s14_apr[[1:12]], met_s14_apr[[25:36]])
 
 # calculate sd and mean for each metric raster:
-test <- metrics_sd_mean(s14_apr_jul_metrics)
 test2 <- metrics_sd_mean_v2(s14_apr_jul_metrics)
 
 #### LINEAR REGRESSION ####
@@ -190,11 +189,9 @@ abline(species_model_centered)
 #> try normalizing:
 #> can't normalize it because of only 2 data points
 s14_species_z <- (s14_species - mean(s14_species)) / sd(s14_species)
-texture_z <- (s1)
-?scale
 
 #> MAKE ONCE MANUALLY WITH BOTH SLOPES:
-png(filename="./plots_test_centered.png", width = 3000, height = 1500, res = 200)
+png(filename="./images/plots_test_centered.png", width = 3000, height = 1500, res = 200)
 par(mfrow=c(4,6)) # 4 rows for 4 bands
 
 for (i in 1:ncol(test2)){

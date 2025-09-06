@@ -96,9 +96,18 @@ metrics_sd_mean_v2 <- function(metric_raster, n_bands=4){
 }
 
 
+### GET Y VAR:
+# A function to easily retrieve a column for a specific site from the env_params dataframe
+# to be used as a y variable in species_linear_modeling()
+
+get_y_var_column <- function(site_nr, column_name){
+  column <- env_params[,column_name][env_params$siteID == site_nr]
+  return(column)
+}
+
 
 ### LINEAR MODEL FUNCTIONS
-species_linear_modeling <- function(png_name, metric_df, y_var, time_intervals, n_bands){
+linear_modeling <- function(png_name, metric_df, y_var, time_intervals, n_bands){
   
   # metric_df: generated from metrics_sd_mean_v2(), one column per metric/band/sd-mean combo,
   #   one row per time interval (=timestep)
@@ -125,26 +134,28 @@ species_linear_modeling <- function(png_name, metric_df, y_var, time_intervals, 
   x_linmod_slopes <- sapply(x_linmod, function(x) coef(x)["time_intervals"]) # list of slopes
   slopes_diff <- abs(x_linmod_slopes - y_linmod_slope)
   x_linmod_sorted <- x_linmod[order(slopes_diff)] # obsolete?
-  result <- data.frame(slopes_diff = slopes_diff, slope = x_linmod_slopes)
+  result <- data.frame(slopes_diff = slopes_diff,
+                       slope_x = x_linmod_slopes,
+                       slope_y = rep(y_linmod_slope, length(x_linmod_slopes)))
 
   ### write image with centered data for slope comparability:
   # center data and create centered linmods:
-  y_centered <- y_var - mean(y_var)
+  y_centered <- y_var - mean(y_var, na.rm=T)
   y_linmod_centered <- lm(y_centered ~ time_intervals)
   # center each column of x individually:
   x_centered <- x_centered <- as.data.frame(scale(metric_df, center = TRUE, scale = FALSE))
   x_linmod_centered <- lapply(x_centered, function(col) lm(col ~ time_intervals))
   
-  
+  # Multiplot image
   png(filename = png_name, height = graph_rows*300, width = graph_cols*400, res = 200)
   par(mfrow = c(graph_rows, graph_cols))
   
   for (i in 1:ncol(metric_df)){
     plot(metric_df[,i],
-         ylim=c(0, max(metric_df)),
+         ylim=c(-max(metric_df, na.rm = T) / 2, max(metric_df, na.rm = T)),
          xlab = "time",
          ylab="value",
-         main=colnames(metric_df)[i])
+         main=gsub("glcm_", "", colnames(metric_df)[i]))
     abline(reg = x_linmod_centered[[i]], col = "red")
     abline(reg = y_linmod_centered, col = "blue")
   }
@@ -152,3 +163,4 @@ species_linear_modeling <- function(png_name, metric_df, y_var, time_intervals, 
   
   return(result)
 }
+

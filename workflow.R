@@ -8,9 +8,10 @@ library(ggplot2)
 library(gridExtra)
 source("./helper_functions.R")
 
-s8_img_list <- list.files("./data/_raster/", pattern = "site8_*", full.names = T)
-s14_img_list <- list.files("./data/_raster/", pattern = "site14_*", full.names = T)
-s10_img_list <- list.files("./data/_raster/", pattern = "site10_*", full.names = T)
+# load rasters and exclude QGIS .tif.aux.xml files with regex:
+s8_img_list <- list.files("./data/_raster/", pattern = "^site8_.*\\.tif$", full.names = T)
+s14_img_list <- list.files("./data/_raster/", pattern = "^site14_.*\\.tif$", full.names = T)
+s10_img_list <- list.files("./data/_raster/", pattern = "^site10_.*\\.tif$", full.names = T)
 
 s8_stack <- clip_to_subplot(img_list = s8_img_list, subplot_feature = subplot8)
 s10_stack <- clip_to_subplot(img_list = s10_img_list, subplot_feature = subplot10)
@@ -28,4 +29,14 @@ s8_met_sd_mean <- metrics_sd_mean_v2(s8_met, n_bands = 4)
 s10_met_sd_mean <- metrics_sd_mean_v2(s10_met, n_bands = 4)
 s14_met_sd_mean <- metrics_sd_mean_v2(s14_met, n_bands = 4)
 
-s8_result <- species_linear_modeling("s8_agg2_models", s8_met_sd_mean, )
+# the y variable can be e.g. the # of species for species richness analysis:
+s8_no_of_species <- get_y_var_column(8, "species_on_run")
+s10_no_of_species <- get_y_var_column(10, "species_on_run")
+s14_no_of_species <- get_y_var_column(14, "species_on_run")
+
+# for species richness estimation the metrics data frame is shortened as only
+# 2 months of sp.richn. observations are available:
+s8_result <- species_linear_modeling("./images/s8_agg2_models",
+                                     s8_met_sd_mean[2:3,],
+                                     s8_no_of_species[!is.na(s8_no_of_species)],
+                                     c(1,2), 4)
