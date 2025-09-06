@@ -161,6 +161,23 @@ linear_modeling <- function(png_name, metric_df, y_var, time_intervals, n_bands)
   }
   dev.off()
   
+  # Single plots for all metrics
+  for (i in 1:ncol(metric_df)){
+    png(filename = paste0(gsub(".png", "", png_name), "_",
+                          gsub("site\\d{1,2}_", "", colnames(metric_df)[i]),
+                          ".png"))
+    par(mfrow=c(1,1))
+    
+    plot(metric_df[,i],
+         ylim=c(-max(metric_df, na.rm = T) / 2, max(metric_df, na.rm = T)),
+         xlab = "time",
+         ylab="value",
+         main=gsub("glcm_", "", colnames(metric_df)[i]))
+    abline(reg = x_linmod_centered[[i]], col = "red")
+    abline(reg = y_linmod_centered, col = "blue")
+    dev.off()
+  }
+
   return(result)
 }
 
