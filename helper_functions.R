@@ -177,6 +177,11 @@ linear_modeling <- function(png_name, metric_df, y_var, time_intervals, n_bands)
     abline(reg = y_linmod_centered, col = "blue")
     dev.off()
   }
+  
+  # Write list of all model slopes
+  write.table(result,
+              file = gsub(".png", "_slopes.xml", png_name), sep = ",",
+              row.names = T, col.names = T)
 
   return(result)
 }
