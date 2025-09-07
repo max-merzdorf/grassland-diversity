@@ -3,6 +3,12 @@ library(rasterdiv)
 library(GLCMTextures)
 library(stringr)
 
+### coefficient of variation:
+cv <- function(x){
+  r <- sd(x) / mean(x)
+  return(r)
+}
+
 ### Quick NDVI:
 calc_ndvi <- function(red, nir){
   ndvi <- (nir-red) / (nir+red)
@@ -72,6 +78,7 @@ calc_spat_metrics <- function(myraster){
 # make it so the returned df has nrow = nlyr(raster)/4(bands)/3(metrics per band)
 # -> 1 row per month -> easier to get timeseries
 # -> namevector for colnames
+
 metrics_sd_mean_v2 <- function(metric_raster, n_bands=4){
   result <- c()
   cnames <- c()
@@ -86,9 +93,10 @@ metrics_sd_mean_v2 <- function(metric_raster, n_bands=4){
     cnames <- gsub("_orthomosaic", "", cnames)
     rnames <- c(rnames, substr(msd_name, 1, 8), substr(mmean_name, 1, 8))
   }
+  
   # Better to return a 2 row dataframe with every band/metric/sd/mean combo per column
   # so nrow= # of layers in metric_raster / 4 (bands per img) / 3 (metrics per img)
-  res_df <- data.frame(matrix(result, nrow=nlyr(metric_raster)/n_bands/3, byrow=F))
+  res_df <- data.frame(matrix(result, nrow=4, byrow=T))
   colnames(res_df) <- unique(cnames)
   rownames(res_df) <- unique(rnames)
   
