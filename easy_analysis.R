@@ -32,7 +32,7 @@ stack <- clip_to_subplot(img_list = uav_images,
 names(stack) <- gsub("[NES]_orthomosaic_",
                      paste0("site", site_nr, "_B"), names(stack))
 
-agg <- agg_my_rasters(stack, mfact = agg_factor, mfun = "mean")
+agg <- terra::aggregate(stack, fact = agg_factor, fun = "mean")
 
 metrics <- calc_spat_metrics(agg)
 

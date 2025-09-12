@@ -37,14 +37,15 @@ agg_my_rasters <- function(rstack, mfact, mfun){
   return(res)
 }
 
+
 ### Calculate GLCM metrics for a SpatRaster with multiple bands, return a SpatRaster
 #   with named layers
 
-calc_spat_metrics <- function(myraster){
+calc_spat_metrics <- function(rst){
   result <- terra::rast()
   
-  for (i in 1:nlyr(myraster)){
-    lyr <- myraster[[i]]
+  for (i in 1:nlyr(rst)){
+    lyr <- rst[[i]]
     lyrname <- names(lyr) # to name metrics
     mets <- GLCMTextures::glcm_textures(r = lyr,
                                         n_levels=16,
@@ -56,6 +57,7 @@ calc_spat_metrics <- function(myraster){
   }
   return(result)
 }
+
 
 ### Calculate sd and mean for each raster and return result as df
 
