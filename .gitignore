@@ -5,6 +5,7 @@
 .Rproj.user/
 *.Rproj
 tests_random.R
+test_runtimes.R
 
 # any images or MS office files
 *.png
