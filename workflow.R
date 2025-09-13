@@ -40,3 +40,20 @@ s8_result <- species_linear_modeling("./images/s8_agg2_models",
                                      s8_met_sd_mean[2:3,],
                                      s8_no_of_species[!is.na(s8_no_of_species)],
                                      c(1,2), 4)
+
+# Try adding rao and shannon:
+s8_img_list <- list.files("./data/_raster/", pattern = "^site8_.*\\.tif$", full.names = T)
+s8_stack <- clip_to_subplot(img_list = s8_img_list, subplot_feature = subplot8)
+s8_agg2 <- agg_my_rasters(s8_stack, mfact = 2, mfun = "mean")
+s8_met <- calc_spat_metrics(s8_agg2)
+library(rasterdiv)
+test <- s8_stack[[1]]
+test
+unique(is.na(matrix(test)))
+# fill NA with focal
+test <- terra::focal(test, na.policy ="only")
+unique(is.na(matrix(test)))
+test
+raoq <- paRao(x = test, method="classic",simplify=2, window=c(3))
+raoq
+s8_met <- c(s8_met, raoq[[1]][[1]])
