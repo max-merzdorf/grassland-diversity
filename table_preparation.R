@@ -51,6 +51,7 @@ subplots <- st_read("./data/_vector/subplots_rectangles.gpkg")
 superplots <- st_read(dsn = "./data/_vector/sampling_sites_large_int_ext_seminat.gpkg")
 superplots <- st_transform(superplots, st_crs(x = subplots))
 plots <- st_join(subplots, y = superplots, join = st_intersects)
+plots <- st_transform(plots, crs=32632)
 rm(subplots)
 
 
