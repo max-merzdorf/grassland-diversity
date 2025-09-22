@@ -9,7 +9,7 @@ library(gridExtra)
 source("./helper_functions.R")
 
 ##### EDIT THESE VARIABLES #####
-site_nr <- 8
+site_nr <- 10
 agg_factor <- 2
 bands <- 4
 analysis <- "species_richness"
@@ -23,14 +23,14 @@ analysis <- "species_richness"
 png_name <- paste0("site", site_nr,"_",analysis,"_agg",agg_factor,".png")
 
 uav_images <- list.files("./data/_raster/",
-                         pattern = paste0("^site", site_nr, "_.*\\.tif$"),
+                         pattern = paste0("site", site_nr, "_3cm_aligned\\.tif$"),
                          full.names = T)
 
 stack <- clip_to_subplot(img_list = uav_images,
                          subplot_feature = plots[plots$siteID == site_nr,]) # get the subplot geometry from plots table
 
-names(stack) <- gsub("[NES]_orthomosaic_",
-                     paste0("site", site_nr, "_B"), names(stack))
+names(stack) <- gsub("3cm_aligned_",
+                     paste0("B"), names(stack))
 
 agg <- terra::aggregate(stack, fact = agg_factor, fun = "mean")
 
