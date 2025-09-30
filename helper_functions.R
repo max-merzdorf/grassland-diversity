@@ -58,25 +58,6 @@ calc_spat_metrics <- function(rst){
   return(result)
 }
 
-
-### Calculate sd and mean for each raster and return result as df
-
-# DEPRECATED use v2 instead:
-#metrics_sd_mean <- function(metric_raster){
-#  result <- c()
-#  for (i in 1:nlyr(metric_raster)){
-#    msd <- sd(values(metric_raster[[i]]), na.rm = T)
-#    mmean <- mean(values(metric_raster[[i]]), na.rm=T)
-#    msd_name <- paste0(names(metric_raster[[i]]), "_sd")
-#    mmean_name <- paste0(names(metric_raster[[i]]), "_mean")
-#    result <- c(result, msd, msd_name, mmean, mmean_name)
-#  }
-  # Better to return a 2 row dataframe with every band/metric/sd/mean combo per column
-  # so nrow= # of layers in metric_raster / 4 (bands per img) / 3 (metrics per img)
-#  res_df <- data.frame(matrix(result, nrow=nlyr(metric_raster)/4/3, byrow=F))
-#  return(res_df)
-#}
-
 # make it so the returned df has nrow = nlyr(raster)/4(bands)/3(metrics per band)
 # -> 1 row per month -> easier to get timeseries
 # -> namevector for colnames
