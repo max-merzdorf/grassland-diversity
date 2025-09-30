@@ -9,7 +9,7 @@ library(gridExtra)
 source("./helper_functions.R")
 
 ##### EDIT THESE VARIABLES #####
-site_nr <- 10
+site_nr <- 8
 agg_factor <- 2
 bands <- 4
 analysis <- "species_richness"
@@ -18,19 +18,18 @@ analysis <- "species_richness"
 # "vegetation_height"
 # ...
 
+processing = "resampled_georef_clipped_aligned"
+
 ##### DON'T TOUCH: #############
 
 png_name <- paste0("site", site_nr,"_",analysis,"_agg",agg_factor,".png")
 
-uav_images <- list.files("./data/_raster/",
-                         pattern = paste0("site", site_nr, "_3cm_aligned\\.tif$"),
+uav_images <- list.files("./data/_raster/original/",
+                         pattern = paste0("site", site_nr, "_", processing, "\\.tif$"),
                          full.names = T)
 
 stack <- clip_to_subplot(img_list = uav_images,
                          subplot_feature = plots[plots$siteID == site_nr,]) # get the subplot geometry from plots table
-
-names(stack) <- gsub("3cm_aligned_",
-                     paste0("B"), names(stack))
 
 agg <- terra::aggregate(stack, fact = agg_factor, fun = "mean")
 
