@@ -17,13 +17,25 @@ calc_ndvi <- function(red, nir){
 
 ### Clip a list of UAV raster images to a matching subplot sf feature:
 clip_to_subplot <- function(img_list, subplot_feature){
+  
   res_stack <- terra::rast()
+  
   for (i in 1:length(img_list)){
     site_raster <- terra::rast(img_list[i])
+    
+    # Control layer names here:
+    newnames <- gsub("[NSE]_orthomosaic",
+                     paste0("site", site_nr, "_", "B"),
+                     names(site_raster)) # old naming convention
+    newnames <- gsub("resampled_georef", "B", newnames) # new naming convention
+
+    names(site_raster) <- newnames
+    
     subplot_raster <- terra::crop(site_raster, subplot_feature)
     res_stack <- c(res_stack, subplot_raster)
     # NOTE: this will throw a warning that the first raster is empty, ignore!
   }
+  
   return(res_stack)
 }
 
