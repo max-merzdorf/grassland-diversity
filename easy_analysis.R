@@ -5,13 +5,14 @@ library(sf)
 library(dplyr)
 library(stringr)
 library(ggplot2)
+library(RStoolbox)
 library(gridExtra)
 source("./helper_functions.R")
 
 ##### EDIT THESE VARIABLES #####
-site_nr <- 8
-agg_factor <- 2
-bands <- 4
+site_nr <- 10
+agg_factor <- 1
+nlevels <- 32
 analysis <- "species_richness"
 # "species_richness"
 # "species_abundance"
@@ -22,25 +23,53 @@ processing = "resampled_georef_clipped_aligned"
 
 ##### DON'T TOUCH: #############
 
-png_name <- paste0("site", site_nr,"_",analysis,"_agg",agg_factor,".png")
-
 uav_images <- list.files("./data/_raster/original/",
                          pattern = paste0("site", site_nr, "_", processing, "\\.tif$"),
                          full.names = T)
 
-stack <- clip_to_subplot(img_list = uav_images,
-                         subplot_feature = plots[plots$siteID == site_nr,]) # get the subplot geometry from plots table
+stack <- terra::rast(uav_images)
+
+stack <- terra::crop(stack, plots[plots$siteID == site_nr,])
+
+# April bands have wrong names as they were not georeferenced
+names(stack) <- gsub("[NSE]_orthomosaic",
+                     paste0("site", site_nr, "_", "B"),
+                     names(stack))
+names(stack) <- gsub("resampled_georef_", "B_", names(stack))
 
 agg <- terra::aggregate(stack, fact = agg_factor, fun = "mean")
 
-metrics <- calc_spat_metrics(agg)
 
-metrics_stat_derivs <- metrics_sd_mean_v2(metrics, n_bands = bands)
+metrics <- calc_spat_metrics(agg, nlevels = nlevels)
+# get dates and names for row and column names:
+dates <- unique(unlist(lapply(names(metrics), FUN = substr, 1, 8)))
+
+metrics_stats <- global(x = metrics,
+                        fun = "sd",
+                        na.rm = TRUE)
+
+predictor_names <- unique(gsub("\\d{8}_site\\d{1,2}_", "", rownames(metrics_stats)))
+
+mat <- matrix(metrics_stats$sd,
+              ncol = 4,
+              byrow = FALSE)
+metstats <- as.data.frame(mat)
+colnames(metstats) <- dates
+rownames(metstats) <- predictor_names
 
 # remove june from env_params (no UAV image)
 env_params <- subset(env_params, env_params$Col_run != 2)
 
+# change name to metrics_stat_derivatives so i don't have to change the following stuff
+# and transpose the data frame to fit with previous format
+
+metrics_stat_derivs <- as.data.frame(t(metstats))
+
+bands <- nlyr(metrics) / ncol(metrics_stat_derivs)
+
 if (analysis == "species_richness") {
+  
+  png_name <- paste0("site", site_nr,"_","speciesRichness","_n",nlevels,"_agg",agg_factor,".png")
   
   # get species richness data
   sp_rich <- get_y_var_column(site_nr, "species_on_run")
@@ -67,6 +96,8 @@ if (analysis == "species_richness") {
   
 } else if (analysis == "vegetation_height") {
   
+  png_name <- paste0("site", site_nr,"_","vegetationHeight","_n",nlevels,"_agg",agg_factor,".png")
+  
   y_points <- get_y_var_column(site_nr, "veg_height_cm")
   
   res <- linear_modeling(png_name = png_name,
@@ -75,5 +106,3 @@ if (analysis == "species_richness") {
                          c(1,3,4,5),
                          bands)
 }
-
-# go to "single_plot.R" to make nicer plots for selected metrics
