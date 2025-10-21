@@ -53,14 +53,14 @@ agg_my_rasters <- function(rstack, mfact, mfun){
 ### Calculate GLCM metrics for a SpatRaster with multiple bands, return a SpatRaster
 #   with named layers
 
-calc_spat_metrics <- function(rst){
+calc_spat_metrics <- function(rst, nlevels){
   result <- terra::rast()
   
   for (i in 1:nlyr(rst)){
     lyr <- rst[[i]]
     lyrname <- names(lyr) # to name metrics
     mets <- GLCMTextures::glcm_textures(r = lyr,
-                                        n_levels=16,
+                                        n_levels=nlevels,
                                         metrics = c("glcm_entropy", "glcm_mean", "glcm_dissimilarity"),
                                         quant_method = "range")
     metric_names <- paste0(lyrname,"_",names(mets))
@@ -69,35 +69,6 @@ calc_spat_metrics <- function(rst){
   }
   return(result)
 }
-
-# make it so the returned df has nrow = nlyr(raster)/4(bands)/3(metrics per band)
-# -> 1 row per month -> easier to get timeseries
-# -> namevector for colnames
-
-metrics_sd_mean_v2 <- function(metric_raster, n_bands=4){
-  result <- c()
-  cnames <- c()
-  rnames <- c()
-  for (i in 1:nlyr(metric_raster)){
-    msd <- sd(values(metric_raster[[i]]), na.rm = T)
-    mmean <- mean(values(metric_raster[[i]]), na.rm=T)
-    msd_name <- paste0(names(metric_raster[[i]]), "_sd")
-    mmean_name <- paste0(names(metric_raster[[i]]), "_mean")
-    result <- c(result, msd, mmean)
-    cnames <- c(cnames, substr(msd_name, 10, 100), substr(mmean_name, 10, 100))
-    cnames <- gsub("_orthomosaic", "", cnames)
-    rnames <- c(rnames, substr(msd_name, 1, 8), substr(mmean_name, 1, 8))
-  }
-  
-  # Better to return a 2 row dataframe with every band/metric/sd/mean combo per column
-  # so nrow= # of layers in metric_raster / 4 (bands per img) / 3 (metrics per img)
-  res_df <- data.frame(matrix(result, nrow=4, byrow=T))
-  colnames(res_df) <- unique(cnames)
-  rownames(res_df) <- unique(rnames)
-  
-  return(res_df)
-}
-
 
 ### GET Y VAR:
 # A function to easily retrieve a column for a specific site from the env_params dataframe
