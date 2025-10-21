@@ -16,19 +16,19 @@ join <- st_join(subplots, y = plots, join = st_intersects)
 
 ###
 # load an original img
-img <- terra::rast("./data/_raster/site8_202409812_aligned.tif")
+img2 <- terra::rast("./data/_raster/original/20240408_E_orthomosaic.tif")
 plot(img[[3]])
 plotRGB(img, r=3,g=2,b=1, stretch="lin")
 
 ### Test Rao's Q and Shannon's H'
 library(rasterdiv)
 library(terra)
-img <- terra::rast("./data/_raster/20240408_E_subplot.tif")
+img <- terra::rast("./data/_raster/original/20240408_site8_resampled_georef_clipped_aligned.tif")
 img <- terra::aggregate(img[[1]], 4)
 plot(img)
 img
-rao <- paRao(x = test,
-             window=c(3, 5),
+rao <- paRao(x = img,
+             window=c(9),
              method = "classic",
              simplify = 2)
 
@@ -86,3 +86,74 @@ img <- terra::rast("./data/_raster/20240408_E_subplot.tif")
 img
 pca <- rasterPCA(img)
 pca
+
+### LOAD RGB ###
+s10_rgb <- terra::rast("./data/_raster/site10_20240812_RGB_mosaic.tif")
+s10_rgb <- terra::crop(s10_rgb, plots[plots$siteID == 10,])
+
+
+### why are rasters sometimes emptx?
+img <- terra::rast("./data/_raster/resample_this/site8_20240408_aligned.tif")
+img[[1]]
+unique(img[[1]]) # -> 8 bit
+plot(img[[1]])
+subimg <- terra::crop(img, plots[plots$siteID==10])
+plot(subimg)
+
+agged <- terra::aggregate(img, fact = 0.03/res(img)[1])
+
+aggregate_to_res <- function(r, targetres){
+  rfact <- targetres / res(r)[1]
+  result <- terra::aggregate(r, fact = rfact)
+  return(result)
+}
+test <- aggregate_to_res(img, 0.03)
+
+img2 <- terra::rast("./data/_raster/20240408_site8_3cm_aligned.tif")
+
+test <- terra::resample(img, img2)
+test
+
+terra::writeRaster(test, "./data/_raster/resample_this/resampling_test_1.tif")
+
+
+### TEST RESAMPLING ###
+img <- rast("./data/_raster/original/20240408_N_orthomosaic.tif")
+img2 <- terra::rast("./data/_raster/original/8bit/20240408_site10_3cm_orthomosaic.tif")
+img_resamp <- rast("./data/_raster/original/20240523_N_orthomosaic.tif")
+
+virtual_raster <- rast(nrows = 10, ncols = 10, crs = "epsg:32632", resolution = 0.03)
+
+res <- terra::resample(img_resamp, virtual_raster)
+terra::writeRaster(res, "./data/_raster/resampling_test.tif")
+res <- terra::resample(img_resamp, img2)
+terra::writeRaster(res, "./data/_raster/resampling_test_to_3cm_site8.tif")
+
+# copy of input raster but with different resolution?
+vrast <- rast(extent = ext(img_resamp), crs = crs(img_resamp), resolution = 0.03)
+vrast
+res <- terra::resample(img_resamp, vrast)
+terra::writeRaster(res, "./data/_raster/resampling_virtual_reaster_copy.tif")
+
+
+### CLIP ONE RASTER MANY SUBPLOTS ###
+library(terra)
+library(sf)
+uas <- rast("./data/_raster/original/20240408_site10_resampled_georef_clipped_aligned.tif")
+plots <- subplots <- st_read("./data/_vector/subplots_rectangles.gpkg")
+
+### TEST RAO and SHANNON ###
+rao <- rasterdiv::paRao(agg[[1]], alpha = 2)
+
+
+
+###### Delta slopes absolute differneces (boxplots) ######
+d_slopes_long <- pivot_longer(delta_slopes, cols=colnames(delta_slopes))
+
+p <- ggplot(d_slopes_long, aes(x=name, y=value, fill=name)) +
+  geom_violin() +
+  scale_fill_viridis_d(labels = c("Site 10", "Site 14", "Site 8")) +
+  labs(title = "Delta slopes species richness / texture metrics")
+png(filename = "./images/graphs/d_slopes_speciesRichness_textureMetrics.png", width = 1980, height = 1080, res=300)
+p
+dev.off()
