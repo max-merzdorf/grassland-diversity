@@ -13,3 +13,12 @@ for (i in sites){
     
   }
 }
+
+# reproject RGB mosaics
+rgbs <- list.files(path="./data/_raster", pattern = "RGB_mosaic.tif$", full.names = T)
+
+for (i in rgbs){
+  img <- terra::rast(i)
+  repro <- terra::project(img, "epsg:32632")
+  terra::writeRaster(repro, filename = i, overwrite=T)
+}
