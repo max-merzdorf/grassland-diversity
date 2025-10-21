@@ -9,8 +9,13 @@ from rasterio.crs import CRS
 
 # Try single coreg:
 
-img_ref = "C:/EAGLE/InnoLab/data/_raster/20240408_site8_3cm_georef.tif"
-img_target = "C:/EAGLE/InnoLab/data/_raster/20240523_site8_3cm_georef.tif"
+path = "C:/EAGLE/InnoLab/data/_raster/original/"
+site = "10"
+
+###########################################################
+
+img_ref = path + "20240523_site" + site + "_resampled_georef_clipped.tif"
+img_target = path + "20240722_site" + site + "_resampled_georef_clipped.tif"
 
 img = rio.open(img_ref)
 width = img.width
