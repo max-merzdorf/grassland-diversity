@@ -1,22 +1,78 @@
-library(rasterdiv)
 library(terra)
-img <- terra::rast("./data/_raster/original/20240408_site8_resampled_georef_clipped_aligned.tif")
 
-hist(values(img))
+site_nr <- 14
 
-# Test quantiles:
-# q <- quantile(values(img), probs = c(.95, .98, .99), na.rm=T)
-# > works!
+################################################################################
+######################### MULTI LAYER SPATRASTER ###############################
+################################################################################
 
-# Replace all values higher than the 99th percentile with NA
-values(img)[values(img) >= quantile(values(img), probs = c(.99), na.rm = T)] <- NA
-hist(values(img))
+uav_images <- list.files("./data/_raster/original/",
+                         pattern = paste0("site", site_nr, "_resampled_georef_clipped_aligned", ".tif$"),
+                         full.names = T)
 
-# Rescale to 8-bit:
-r_min <- min(global(img, "min", na.rm = TRUE)[[1]])
-r_max <- max(global(img, "max", na.rm = TRUE)[[1]])
+for (j in 1:length(uav_images)){
+  
+  stack99 <- terra::rast()
+  stack <- terra::rast(uav_images[j])
+  
+  for(i in 1:nlyr(stack)){
+    
+    # 99th percentile cut
+    lyr <- stack[[i]]
+    lyrperc <- quantile(matrix(lyr), probs = .99, na.rm = T)
+    writeLines(paste0("layer ", names(lyr), " 99 percentile = ", lyrperc))
+    values(lyr)[values(lyr) > lyrperc] <- NA
+    
+    # 8-bit conversion
+    lyrmin <- min(global(lyr, "min", na.rm = TRUE)[[1]])
+    lyrmax <- max(global(lyr, "max", na.rm = TRUE)[[1]])
+    lyr_scaled <- round( (lyr - lyrmin) / (lyrmax - lyrmin) * 255 )
+    
+    # to integer
+    stack99 <- c(stack99, as.int(lyr_scaled))
+  }
+  
+  # write the stacked bands as raster
+  terra::writeRaster(stack99,
+                     filename = gsub("resampled_georef_clipped_aligned",
+                                     "resampled_georef_aligned_8bit",
+                                     uav_images[j]))
+}
 
-img_scaled <- round( (img - r_min) / (r_max - r_min) * 255)
-img_scaled
-hist(img_scaled)
 
+################################################################################
+######################### LAYER NORMALIZED VALUES ##############################
+################################################################################
+
+for (j in 1:length(uav_images)){
+  
+  stack99 <- terra::rast()
+  stack <- terra::rast(uav_images[j])
+  
+  # rescale to the values across all 4 bands
+  stackmin <- min(global(stack, "min", na.rm = TRUE))
+  stackmax <- max(global(stack, "max", na.rm = TRUE))
+  
+  for(i in 1:nlyr(stack)){
+    
+    # 99th percentile cut
+    lyr <- stack[[i]]
+    lyrperc <- quantile(values(lyr), probs = .99, na.rm = T)
+    writeLines(paste0("layer ", names(lyr), " 99 percentile = ", lyrperc))
+    values(lyr)[values(lyr) > lyrperc] <- NA
+    
+    # 8-bit conversion
+    lyr_scaled <- round( (lyr - stackmin) / (stackmax - stackmin) * 255 )
+    
+    # to integer
+    stack99 <- c(stack99, as.int(lyr_scaled))
+    
+    
+  }
+  
+  # write the stacked bands as raster
+  terra::writeRaster(stack99,
+                     filename = gsub("resampled_georef_clipped_aligned",
+                                     "resampled_georef_aligned_8bit_scene_stretch",
+                                     uav_images[j]))
+}
