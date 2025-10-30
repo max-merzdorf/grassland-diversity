@@ -3,11 +3,13 @@ library(terra)
 site_nr <- 14
 
 ################################################################################
-######################### MULTI LAYER SPATRASTER ###############################
+############################ BAND HIST STRETCH #################################
 ################################################################################
 
 uav_images <- list.files("./data/_raster/original/",
-                         pattern = paste0("site", site_nr, "_resampled_georef_clipped_aligned", ".tif$"),
+                         pattern = paste0("site", site_nr,
+                                          "_resampled_georef_clipped_aligned",
+                                          ".tif$"),
                          full.names = T)
 
 for (j in 1:length(uav_images)){
@@ -41,7 +43,7 @@ for (j in 1:length(uav_images)){
 
 
 ################################################################################
-######################### LAYER NORMALIZED VALUES ##############################
+######################### SCENE HIST STRETCH #### ##############################
 ################################################################################
 
 for (j in 1:length(uav_images)){
@@ -73,6 +75,7 @@ for (j in 1:length(uav_images)){
   # write the stacked bands as raster
   terra::writeRaster(stack99,
                      filename = gsub("resampled_georef_clipped_aligned",
-                                     "resampled_georef_aligned_8bit_scene_stretch",
+                                     "resampled_georef_aligned",
+                                     "_8bit_scene_stretch",
                                      uav_images[j]))
 }
