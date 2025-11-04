@@ -1,5 +1,6 @@
-library(terra)
+# Cut the 99th percentile of UAS float data and convert to 8-bit, write to disk
 
+library(terra)
 site_nr <- 14
 
 ################################################################################
