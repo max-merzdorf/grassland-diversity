@@ -61,8 +61,10 @@ calc_spat_metrics <- function(rst, nlevels){
     lyrname <- names(lyr) # to name metrics
     mets <- GLCMTextures::glcm_textures(r = lyr,
                                         n_levels=nlevels,
-                                        metrics = c("glcm_entropy", "glcm_mean", "glcm_dissimilarity"),
+                                        metrics = c("glcm_contrast", "glcm_homogeneity", "glcm_dissimilarity", "glcm_entropy", "glcm_ASM"),
                                         quant_method = "range")
+    
+    # get layer names
     metric_names <- paste0(lyrname,"_",names(mets))
     names(mets) <- metric_names
     result <- c(result, mets)
@@ -134,23 +136,6 @@ linear_modeling <- function(png_name, metric_df, y_var, time_intervals, n_bands)
     abline(reg = y_linmod_centered, col = "blue")
   }
   dev.off()
-  
-  # Single plots for all metrics
-  for (i in 1:ncol(metric_df)){
-    png(filename = paste0(gsub(".png", "", png_name), "_",
-                          gsub("site\\d{1,2}_", "", colnames(metric_df)[i]),
-                          ".png"))
-    par(mfrow=c(1,1))
-    
-    plot(metric_df[,i],
-         ylim=c(-max(metric_df, na.rm = T) / 2, max(metric_df, na.rm = T)),
-         xlab = "time",
-         ylab="value",
-         main=gsub("glcm_", "", colnames(metric_df)[i]))
-    abline(reg = x_linmod_centered[[i]], col = "red")
-    abline(reg = y_linmod_centered, col = "blue")
-    dev.off()
-  }
   
   # Write list of all model slopes
   write.table(result,
