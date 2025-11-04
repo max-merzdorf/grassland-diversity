@@ -107,16 +107,5 @@ plots <- cbind(plots, veg_height_max, veg_height_min, veg_height_mean, veg_heigh
 rm(i, veg_height_max, veg_height_mean, veg_height_min, veg_height_sd, species_run1,
    species_run3, species_total)
 
-# subset the uav sites:
-uav_sites <- plots[c(8,10,11,14),]
-
-# separate into subplots 8, 10, 11, 14, for which UAV images are available
-subplot8 <- plots[plots$siteID == 8,]
-subplot10 <- plots[plots$siteID == 10,]
-subplot11 <- plots[plots$siteID == 11,]
-subplot14 <- plots[plots$siteID == 14,]
-
-# calculate site geoms:
-superplots$area_m2 <- st_area(superplots$geom)
-
-# -> continue with subplot_texture_metrics.R
+# write to disk
+ap <- read.table("./data/_tables/_analysisready_env_params.csv")
