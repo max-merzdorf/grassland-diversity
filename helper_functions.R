@@ -16,6 +16,6 @@ source("./f_calc_spat_metrics.R")
 source("./f_get_y_var.R")
 
 
-### LINEAR MODEL FUNCTIONS
+### Linear models:
 source("./f_linear_modeling.R")
 
