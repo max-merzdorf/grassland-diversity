@@ -69,8 +69,6 @@ for (j in 1:length(uav_images)){
     
     # to integer
     stack99 <- c(stack99, as.int(lyr_scaled))
-    
-    
   }
   
   # write the stacked bands as raster
