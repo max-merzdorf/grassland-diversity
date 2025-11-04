@@ -107,5 +107,5 @@ plots <- cbind(plots, veg_height_max, veg_height_min, veg_height_mean, veg_heigh
 rm(i, veg_height_max, veg_height_mean, veg_height_min, veg_height_sd, species_run1,
    species_run3, species_total)
 
-# write to disk
-ap <- read.table("./data/_tables/_analysisready_env_params.csv")
+# write to disk (plots as sf)
+#sf::st_write(plots, dsn = "./data/_vector/_analysisready_plots.gpkg")
