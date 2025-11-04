@@ -10,6 +10,7 @@ library(gridExtra)
 source("./helper_functions.R")
 
 ##### EDIT THESE VARIABLES #####
+
 site_nr <- 10
 agg_factor <- 1
 nlevels <- 32
@@ -22,16 +23,17 @@ analysis <- "species_richness"
 processing = "resampled_georef_aligned_8bit"
 # "resampled_georef_clipped_aligned"
 
-##### DON'T TOUCH: #############
+########## DON'T TOUCH: #############
 
 # load tables
 env_params <- read.table("./data/_tables/_analysisready_env_params.csv")
-plots <- read.table("./data/_tables/_analysisready_plots.csv")
+plots <- sf::st_read("./data/_vector/_analysisready_plots.gpkg")
 allspecies <- read.table("./data/_tables/_analysisready_allspecies.csv")
 
 # load and stack UAS images
 uav_images <- list.files("./data/_raster/original/",
-                         pattern = paste0("site", site_nr, "_", processing, "\\.tif$"),
+                         pattern = paste0("site", site_nr, "_",
+                                          processing, "\\.tif$"),
                          full.names = T)
 stack <- terra::rast(uav_images)
 
@@ -47,9 +49,10 @@ names(stack) <- gsub("[NSE]_orthomosaic",
                      names(stack))
 names(stack) <- gsub("resampled_georef_", "B_", names(stack))
 
-# The raster is converted to 8-bit. Some extremely high reflectance noise is removed
-# by cutting the 99th percentile of values, to enhance the contrast of non-noise values
-# (this stpe was done in 'percentile_data_cut.R' and is read from disk)
+# The raster is converted to 8-bit. Some extremely high reflectance noise is
+# removed by cutting the 99th percentile of values, to enhance the contrast
+# of non-noise values (this step was done in 'percentile_data_cut.R'
+# and is read from disk)
 
 # convert to integer
 stack <- terra::as.int(stack)
@@ -69,7 +72,8 @@ for(i in 1:nlyr(agg)){
   for(j in 1:length(wsizes)){
     rao <- rasterdiv::paRao(agg[[i]], dist_m = "euclidean", alpha = 1,
                             window = wsizes[j])
-    names(rao[[1]][[1]]) <- paste0(lyrname,"_RaoQ_",names(rao),"_",names(rao[[1]]))
+    names(rao[[1]][[1]]) <- paste0(lyrname,"_RaoQ_",names(rao),"_",
+                                   names(rao[[1]]))
     raostack <- c(raostack, rao[[1]][[1]])
   }
 }
@@ -98,7 +102,8 @@ metrics_stats <- global(x = metrics,
 # clarify population standard deviation in name, as we add coefficient of
 # variation to the same dataframe later
 rownames(metrics_stats) <- paste0(rownames(metrics_stats), "_std")
-predictor_names <- unique(gsub("\\d{8}_site\\d{1,2}_", "", rownames(metrics_stats)))
+predictor_names <- unique(gsub("\\d{8}_site\\d{1,2}_", "",
+                               rownames(metrics_stats)))
 
 # bind the dataframes
 colnames(cvdf) <- "std"
@@ -111,8 +116,8 @@ metstats <- as.data.frame(mat)
 colnames(metstats) <- dates
 rownames(metstats) <- predictor_names
 
-# change name to metrics_stat_derivatives so i don't have to change the following stuff
-# and transpose the data frame so that dates are in columns:
+# change name to metrics_stat_derivatives so i don't have to change the
+# following stuff and transpose the data frame so that dates are in columns:
 metrics_stat_derivs <- as.data.frame(t(metstats))
 
 # remove june from env_params (no UAV image that month)
@@ -124,7 +129,8 @@ bands <- nlyr(metrics) / ncol(metrics_stat_derivs)
 # write the results as images and tables:
 if (analysis == "species_richness") {
   
-  png_name <- paste0("site", site_nr,"_","speciesRichness","_n",nlevels,"_agg",agg_factor,".png")
+  png_name <- paste0("site", site_nr,"_","speciesRichness","_n",
+                     nlevels,"_agg",agg_factor,".png")
   
   # get species richness data
   sp_rich <- get_y_var_column(site_nr, "species_on_run")
@@ -151,7 +157,8 @@ if (analysis == "species_richness") {
   
 } else if (analysis == "vegetation_height") {
   
-  png_name <- paste0("site", site_nr,"_","vegetationHeight","_n",nlevels,"_agg",agg_factor,".png")
+  png_name <- paste0("site", site_nr,"_","vegetationHeight","_n",nlevels,
+                     "_agg",agg_factor,".png")
   
   y_points <- get_y_var_column(site_nr, "veg_height_cm")
   
