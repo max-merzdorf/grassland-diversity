@@ -43,9 +43,9 @@ for (j in 1:length(uav_images)){
 }
 
 
-################################################################################
-######################### SCENE HIST STRETCH ###################################
-################################################################################
+#########################################################################
+######################### SCENE HIST STRETCH ############################
+#########################################################################
 
 for (j in 1:length(uav_images)){
   
@@ -61,7 +61,7 @@ for (j in 1:length(uav_images)){
     # 99th percentile cut
     lyr <- stack[[i]]
     lyrperc <- quantile(values(lyr), probs = .99, na.rm = T)
-    writeLines(paste0("layer ", names(lyr), " 99 percentile = ", lyrperc))
+    writeLines(paste0("layer ", names(lyr)," 99 percentile = ",lyrperc))
     values(lyr)[values(lyr) > lyrperc] <- NA
     
     # 8-bit conversion
