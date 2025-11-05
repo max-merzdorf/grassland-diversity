@@ -1,15 +1,17 @@
-# Cut the 99th percentile of UAS float data and convert to 8-bit, write to disk
+# Cut the 99th percentile of UAS float data and convert to 8-bit,
+# write to disk
 
 library(terra)
 site_nr <- 14
 
-################################################################################
-############################ BAND HIST STRETCH #################################
-################################################################################
+#########################################################################
+############################ BAND HIST STRETCH ##########################
+#########################################################################
 
 uav_images <- list.files("./data/_raster/original/",
                          pattern = paste0("site", site_nr,
-                                          "_resampled_georef_clipped_aligned",
+                                          "_resampled_georef",
+                                          "_clipped_aligned",
                                           ".tif$"),
                          full.names = T)
 
@@ -23,7 +25,7 @@ for (j in 1:length(uav_images)){
     # 99th percentile cut
     lyr <- stack[[i]]
     lyrperc <- quantile(matrix(lyr), probs = .99, na.rm = T)
-    writeLines(paste0("layer ", names(lyr), " 99 percentile = ", lyrperc))
+    writeLines(paste0("layer ", names(lyr)," 99 percentile = ",lyrperc))
     values(lyr)[values(lyr) > lyrperc] <- NA
     
     # 8-bit conversion
