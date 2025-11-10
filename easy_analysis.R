@@ -14,6 +14,7 @@ source("./helper_functions.R")
 site_nr <- 10
 agg_factor <- 1
 nlevels <- 32
+
 analysis <- "species_richness"
 # "species_richness"
 # "species_abundance"
@@ -38,7 +39,8 @@ uav_images <- list.files("./data/_raster/original/",
 stack <- terra::rast(uav_images)
 
 # crop to the subplot feature. apply a 0.1 m buffer for moving windows
-# (largest window size is 9 px * 0.03m res = 0.27m / 2 = 0.135 -> 15 cm buffer)
+# (largest window size is
+# 9 px * 0.03m res = 0.27m / 2 = 0.135 -> 15 cm buffer)
 stack <- terra::crop(stack, sf::st_buffer(plots[plots$siteID == site_nr,],
                                           dist = 0.15,
                                           endCapStyle = "SQUARE"))
@@ -49,9 +51,9 @@ names(stack) <- gsub("[NSE]_orthomosaic",
                      names(stack))
 names(stack) <- gsub("resampled_georef_", "B_", names(stack))
 
-# The raster is converted to 8-bit. Some extremely high reflectance noise is
-# removed by cutting the 99th percentile of values, to enhance the contrast
-# of non-noise values (this step was done in 'percentile_data_cut.R'
+# The raster is converted to 8-bit. High reflectance noise is
+# removed by cutting the 99th percentile of values, to enhance contrast
+# in non-noise values (this step was done in 'percentile_data_cut.R'
 # and is read from disk)
 
 # convert to integer
@@ -66,6 +68,7 @@ metrics <- calc_spat_metrics(agg, nlevels = nlevels)
 # add Rao's Q for every band as layer:
 wsizes <- c(3,5,7,9)
 raostack <- terra::rast()
+
 for(i in 1:nlyr(agg)){
   lyrname <- names(agg)[i]
   
@@ -117,7 +120,7 @@ colnames(metstats) <- dates
 rownames(metstats) <- predictor_names
 
 # change name to metrics_stat_derivatives so i don't have to change the
-# following stuff and transpose the data frame so that dates are in columns:
+# following and transpose the data frame so that dates are in columns:
 metrics_stat_derivs <- as.data.frame(t(metstats))
 
 # remove june from env_params (no UAV image that month)
@@ -126,45 +129,42 @@ env_params <- subset(env_params, env_params$Col_run != 2)
 # get number of spectral bands
 bands <- nlyr(metrics) / ncol(metrics_stat_derivs)
 
-# write the results as images and tables:
-if (analysis == "species_richness") {
-  
-  png_name <- paste0("site", site_nr,"_","speciesRichness","_n",
-                     nlevels,"_agg",agg_factor,".png")
-  
-  # get species richness data
-  sp_rich <- get_y_var_column(site_nr, "species_on_run")
-  y_points <- sp_rich[!is.na(sp_rich)]
-  # insert NA for June:
-  y_points <- c(y_points[1],
-                NA,
-                y_points[2])
-  
-  # only may and july have species data, insert NA row for June
-  species_metrics <- metrics_stat_derivs[2:3,]
-  species_metrics[3,] <- species_metrics[2,]
-  species_metrics[2,] <- rep(NA, ncol(species_metrics))
-  row.names(species_metrics) <- c(row.names(species_metrics)[1],
-                                  "20240612",
-                                  row.names(species_metrics)[2])
-  
-  res <- linear_modeling(png_name = png_name,
-                         metric_df = species_metrics,
-                         y_var = y_points,
-                         time_intervals = c(1,2,3),
-                         bands)
-  
-  
-} else if (analysis == "vegetation_height") {
-  
-  png_name <- paste0("site", site_nr,"_","vegetationHeight","_n",nlevels,
-                     "_agg",agg_factor,".png")
-  
-  y_points <- get_y_var_column(site_nr, "veg_height_cm")
-  
-  res <- linear_modeling(png_name = png_name,
-                         metric_df = metrics_stat_derivs,
-                         y_var = y_points,
-                         c(1,3,4,5),
-                         bands)
-}
+### Species richness
+
+png_name <- paste0("site", site_nr,"_","speciesRichness","_n",
+                   nlevels,"_agg",agg_factor,".png")
+# get y variable (sp.richness) data
+sp_rich <- get_y_var_column(site_nr, "species_on_run")
+y_points <- sp_rich[!is.na(sp_rich)]
+
+# insert NA for June:
+y_points <- c(y_points[1],
+              NA,
+              y_points[2])
+
+# only may and july have species data, insert NA row for June
+species_metrics <- metrics_stat_derivs[2:3,]
+species_metrics[3,] <- species_metrics[2,]
+species_metrics[2,] <- rep(NA, ncol(species_metrics))
+row.names(species_metrics) <- c(row.names(species_metrics)[1],
+                                "20240612",
+                                row.names(species_metrics)[2])
+
+res <- linear_modeling(png_name = png_name,
+                       metric_df = species_metrics,
+                       y_var = y_points,
+                       time_intervals = c(1,2,3),
+                       bands)
+
+### Vegetation height:
+
+png_name <- paste0("site", site_nr,"_","vegetationHeight","_n",nlevels,
+                   "_agg",agg_factor,".png")
+
+y_points <- get_y_var_column(site_nr, "veg_height_cm")
+
+res <- linear_modeling(png_name = png_name,
+                       metric_df = metrics_stat_derivs,
+                       y_var = y_points,
+                       c(1,3,4,5),
+                       bands)
