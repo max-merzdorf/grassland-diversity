@@ -3,6 +3,7 @@
 library(terra)
 library(ggplot2)
 library(tidyverse)
+library(patchwork)
 source("./f_band_histograms.R")
 
 # load rasters
@@ -35,22 +36,9 @@ nir <- c(resampled[[1]][[4]], resampled[[2]][[4]], resampled[[3]][[4]],
 # lapply everything?
 bandlist <- list(green, red, re, nir)
 names(bandlist) <- c("Green", "Red", "RE", "NIR")
-bandlist <- lapply(bandlist, function(r) {
-  names(r) <- gsub(pat, "_B_", names(r))
+bandlist_a <- lapply(bandlist, function(r) {
+  names(r) <- gsub("_B\\d{1}", "", names(r))
   r
-})
-
-plotlist <- lapply(bandlist, function(r) {
-  
-  df <- pivot_longer(as.data.frame(r),
-                     cols = colnames(as.data.frame(r)))
-  p <- ggplot(data = df, aes(x=value, group=name, fill=name)) +
-    geom_density() +
-    xlim(c(0, quantile(values(r), probs = c(.99)))) + # 99th percentile
-    scale_fill_viridis_d() +
-    labs(title = paste0("Planet ", names(bandlist), " Band")) +
-    theme(legend.position = "none")
-  p
 })
 
 plotlist <- Map(function(r, nm) {
@@ -60,15 +48,19 @@ plotlist <- Map(function(r, nm) {
   ggplot(df, aes(x = value, group = name, fill = name)) +
     geom_density() +
     xlim(c(0, quantile(values(r), probs = .99))) +
+    ylim(c(0, 0.005)) +
     scale_fill_viridis_d() +
-    labs(title = paste0("Planet ", nm, " Band")) +
-    theme(legend.position = "none")
-}, bandlist, names(bandlist))
+    labs(title = paste0(nm, " band"), fill = "Scene") +
+    xlab("Reflectance value") +
+    theme(axis.text.x = element_text(angle = 270+45,
+                                     vjust = 1, hjust = 0))
+}, bandlist_a, names(bandlist_a))
 
-lapply(names(plotlist), function(p) {
-  ggsave(filename = paste0("./images/graphs/planetHist_",p,"_band.png"),
-         plotlist[[p]], width = 7, height = 5, units = "cm")
-})
+wrapped <- wrap_plots(plotlist, nrow = 1, axes = "collect",
+                      guides = "collect")
+
+ggsave(wrapped, filename = "./images/graphs/Planet_densities_wrapped.png",
+       width = 21, height = 6, units = "cm")
 
 ### Compare pixels per band across time
 source("./f_pixel_history.R")
