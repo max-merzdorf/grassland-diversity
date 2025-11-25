@@ -62,8 +62,17 @@ wrapped <- wrap_plots(plotlist, nrow = 1, axes = "collect",
 ggsave(wrapped, filename = "./images/graphs/Planet_densities_wrapped.png",
        width = 21, height = 6, units = "cm")
 
-### Compare pixels per band across time
+### Compare vegetation pixels per band across time
 source("./f_pixel_history.R")
+plots <- sf::st_read("./data/_vector/sampling_sites_buffered_2m.gpkg")
+p10 <- plots[plots$Nummer == "10a",]
+
+# mask bandlist to sote 10:
+p10_rlist <- lapply(bandlist, function(r){
+  r <- terra::crop(r, p10)
+  r <- terra::mask(r, p10)
+  r
+})
 
 histlist <- Map(function(r, nm){
   ggplot(pixel_history(r, 20), aes(x = time, y = value,
@@ -76,7 +85,7 @@ histlist <- Map(function(r, nm){
     xlab("Scene") +
     ylab("Reflectance value") +
     scale_x_discrete(label = c("Apr", "May", "Jul", "Aug"))
-}, bandlist, names(bandlist))
+}, p10_rlist, names(p10_rlist))
 
 w <- wrap_plots(histlist, nrow=1, axes="collect", guides="collect")
 
