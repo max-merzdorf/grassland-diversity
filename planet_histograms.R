@@ -12,6 +12,14 @@ rlist <- lapply(pf, rast)
 
 # resample to same resolution & extent
 resampled <- lapply(rlist, resample, rlist[[1]])
+# rename bands
+pat <- "_\\d+(?:_\\d+_\\d*[a-z]*_3B_[a-zA-Z]*_SR_8b_[a-z_]*)"
+
+resampled <- lapply(resampled, function(x){
+  names(x) <- gsub(pat, "_B", names(x))
+  x
+})
+
 stack <- c(resampled[[1]], resampled[[2]], resampled[[3]], resampled[[4]])
 
 # stack per band:
@@ -23,9 +31,6 @@ re <- c(resampled[[1]][[3]], resampled[[2]][[3]], resampled[[3]][[3]],
            resampled[[4]][[3]])
 nir <- c(resampled[[1]][[4]], resampled[[2]][[4]], resampled[[3]][[4]],
            resampled[[4]][[4]])
-
-# rename bands
-pat <- "_\\d+(?:_\\d+_\\d*[a-z]*_3B_[a-zA-Z]*_SR_8b_[a-z_]*)"
 
 # lapply everything?
 bandlist <- list(green, red, re, nir)
@@ -63,4 +68,25 @@ plotlist <- Map(function(r, nm) {
 lapply(names(plotlist), function(p) {
   ggsave(filename = paste0("./images/graphs/planetHist_",p,"_band.png"),
          plotlist[[p]], width = 7, height = 5, units = "cm")
+})
+
+### Compare pixels per band across time
+source("./f_pixel_history.R")
+
+histlist <- Map(function(r, nm){
+  ggplot(pixel_history(r, 20), aes(x = time, y = value,
+                               group = pixel, color = pixel)) +
+    geom_line() +
+    geom_point() +
+    scale_color_viridis_c() +
+    labs(title = paste0(nm, " band pixel sample")) +
+    xlab("Scene") +
+    ylab("Reflectance value") +
+    theme(legend.position = "none") +
+    scale_x_discrete(label = c("Apr", "May", "Jul", "Aug"))
+}, bandlist, names(bandlist))
+
+lapply(names(histlist), function(p) {
+  ggsave(filename = paste0("./images/graphs/planetPixels_",p,"_band.png"),
+         histlist[[p]], width = 7, height = 7, units = "cm")
 })
