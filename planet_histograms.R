@@ -71,14 +71,14 @@ histlist <- Map(function(r, nm){
     geom_line() +
     geom_point() +
     scale_color_viridis_c() +
-    labs(title = paste0(nm, " band pixel sample")) +
+    ylim(c(0, 5000)) +
+    labs(title = paste0(nm, " band")) +
     xlab("Scene") +
     ylab("Reflectance value") +
-    theme(legend.position = "none") +
     scale_x_discrete(label = c("Apr", "May", "Jul", "Aug"))
 }, bandlist, names(bandlist))
 
-lapply(names(histlist), function(p) {
-  ggsave(filename = paste0("./images/graphs/planetPixels_",p,"_band.png"),
-         histlist[[p]], width = 7, height = 7, units = "cm")
-})
+w <- wrap_plots(histlist, nrow=1, axes="collect", guides="collect")
+
+ggsave(w, filename = "./images/graphs/Planet_pixHist_wrapped.png",
+       width = 21, height = 6, units = "cm")
