@@ -5,7 +5,10 @@ library(sf)
 library(rasterdiv)
 
 rstack <- rast("./data/_raster/planet/Planet_8bit.tif")
-plots <- sf::st_read("./data/_vector/sampling_sites_buffered_2m.gpkg")
+plots <- sf::st_read("./data/_vector/sampling_sites_large_int_ext_seminat.gpkg")
+plots <- st_transform(plots, "EPSG:32632")
+sf_use_s2(FALSE) # turn off spherical geometry use
+plots <- st_buffer(plots, dist = 30)
 
 # convert sf to SpatVector
 aoi_vec <- vect(plots)
@@ -55,7 +58,7 @@ process_aoi_multilayer <- function(i) {
               filename = paste0("./data/_raster/planet/rao/", site,
                                 "_paRao.tif"), overwrite = TRUE)
   
-  return(out_file)
+  return()
 }
 
 # run for all AOIs -------------------------------------------------------
