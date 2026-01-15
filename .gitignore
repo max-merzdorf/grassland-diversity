@@ -9,6 +9,7 @@ test_runtimes.R
 
 # any images or MS office files
 *.png
+*.jpg
 *.docx
 *.pptx
 *.xml
