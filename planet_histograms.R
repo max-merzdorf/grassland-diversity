@@ -91,3 +91,42 @@ w <- wrap_plots(histlist, nrow=1, axes="collect", guides="collect")
 
 ggsave(w, filename = "./images/graphs/Planet_pixHist_wrapped.png",
        width = 21, height = 6, units = "cm")
+
+### Violins
+r <- rast("./data/_raster/planet/Planet_8bit.tif")
+
+green <- subset(r, grep("_B1$", names(r)))
+red <- subset(r, grep("_B2$", names(r)))
+re <- subset(r, grep("_B3$", names(r)))
+nir <- subset(r, grep("_B4$", names(r)))
+bandlist <- list(green, red, re, nir)
+names(bandlist) <- c("Green", "Red", "RE", "NIR")
+
+# crop and mask to site 10 to only capture vegetation pixels
+plots <- sf::st_read("./data/_vector/sampling_sites_buffered_2m.gpkg")
+p10 <- plots[plots$Nummer == "10a",]
+p10r <- lapply(bandlist, function(r){
+  r <- terra::crop(r, p10)
+  r <- terra::mask(r, p10)
+  r
+})
+
+violist <- Map(function(r, nm){
+  df <- pivot_longer(as.data.frame(r), cols = names(r))
+  
+  ggplot(df, aes(x = name, y = value, fill = name)) +
+    geom_violin() +
+    ylim(c(0,255)) +
+    scale_fill_viridis_d() +
+    labs(title = paste0(nm, " band"), fill = "Scene") +
+    xlab("Scene") +
+    ylab("Reflectance value") +
+    theme(legend.position = "none") +
+    scale_x_discrete(label = c("Apr", "May", "Jul", "Aug"))
+}, p10r, names(p10r))
+
+wrapped <- wrap_plots(violist, nrow = 1, axes = "collect",
+                      guides = "collect")
+
+ggsave(wrapped, filename = "./images/graphs/Planet_violins_site10.png",
+       width = 21, height = 7, units = "cm")
