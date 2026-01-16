@@ -63,3 +63,31 @@ process_aoi_multilayer <- function(i) {
 
 # run for all AOIs -------------------------------------------------------
 output_files <- lapply(1:nrow(plots), process_aoi_multilayer)
+
+# multidimensional? ------------------------------------------------------
+# List of rasters to combine the bands for each month to a stack:
+apr <- rstack[[grep("20240408", names(rstack))]]
+may <- rstack[[grep("20240513", names(rstack))]]
+jul <- rstack[[grep("20240709", names(rstack))]]
+aug <- rstack[[grep("20240812", names(rstack))]]
+
+monthly <- list(apr, may, jul, aug)
+
+for (i in plots$Nummer){
+  
+  aoi <- aoi_vec[aoi_vec$Nummer == i]
+  monthly <- lapply(monthly, crop, aoi)
+  monthly <- lapply(monthly, mask, aoi)
+  
+  rao <- lapply(monthly, paRao, dist_m = "euclidean",
+                alpha = 1, window = c(3,5,7,9))
+  
+}
+# troubleshooting
+sapply(monthly, nlyr)
+sapply(monthly, ncell)
+sapply(monthly, dim)
+
+# test paRao on multilayer spatraster:
+test <- paRao(monthly[[1]], dist_m = "euclidean", alpha = 1, window = 5)
+
