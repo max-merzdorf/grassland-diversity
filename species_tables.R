@@ -106,6 +106,9 @@ turnover <- allspecies %>%
     turnover = gained - lost
   ) %>%
   select(Site.No, turnover)
+#> only produces diff in spec number
 
 #write.csv(turnover, "./results/Species_turnover.csv", row.names = F)
+# test codyn pkg
+library(codyn)
 t <- turnover(collins08, time.var = "year", species.var = "species", abundance.var = "abundance", replicate.var = "replicate")
