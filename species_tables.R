@@ -2,9 +2,9 @@
 # Species turnover: Delta of unique species (how different is the species composition from apr -> may)
 library(tidyverse)
 library(vegan)
+library(codyn)
 
 env_params <- read.table("./data/_tables/_analysisready_env_params.csv")
-plots <- sf::st_read("./data/_vector/_analysisready_plots.gpkg")
 allspecies <- read.table("./data/_tables/_analysisready_allspecies.csv")
 
 # add date colum to env_params
@@ -57,9 +57,44 @@ months <- unique(allspecies$month)
 shannon <- allspecies %>%
   group_by(Site.No, month) %>%
   summarise(shannon = vegan::diversity(londo_decimal, index = "shannon"), .groups = "drop")
-#write.csv(shannon, file = "./ShannonH_per_site.csv")
+#write.csv(shannon, file = "./results/ShannonH_per_site.csv", row.names = F)
 
-# add species turnover
+
+# add species turnover -> per site approach
+# with vectors for df:
+t <- c()
+mon <- c()
+site <- c()
+for (i in sites){
+  species <- allspecies[allspecies$Site.No == i,]
+  species <- species %>%
+    mutate(turnover_time = case_when(
+      month == "April" ~ 4,
+      month == "July" ~ 7
+    ))
+  
+  # all occurring species in two months:
+  occ_spec <- unique(species$Species)
+  occ_1 <- unique(species$Species[species$month == "April"])
+  occ_2 <- unique(species$Species[species$month == "July"])
+  lost <- as.numeric(summary(occ_1 %in% occ_2)["FALSE"][[1]]) # number of FALSE: species lost
+  gained <- as.numeric(summary(occ_2 %in% occ_1)["FALSE"][[1]]) # number of FALSE: species gained
+  
+  t1 <- 1
+  t2 <- (gained + lost) / length(occ_2)
+  writeLines(paste0("Site",i, "\n",
+    " Turnover April: ", t1, "\n",
+    " Turnover July: ", t2))
+  t <- c(t, t1, t2)
+  mon <- c(mon, "April", "July")
+  site <- c(site, i, i)
+}
+
+df <- data.frame(site = site, month = mon, turnover = t)
+
+#write.csv(df, "./results/Species_turnover.csv", row.names = F)
+
+# previous approach: -----------------------------------------------------
 turnover <- allspecies %>%
   filter(month %in% c("April", "July")) %>%
   group_by(Site.No, month) %>%
@@ -72,4 +107,5 @@ turnover <- allspecies %>%
   ) %>%
   select(Site.No, turnover)
 
-write.csv(turnover, "./results/Species_turnover.csv")
+#write.csv(turnover, "./results/Species_turnover.csv", row.names = F)
+t <- turnover(collins08, time.var = "year", species.var = "species", abundance.var = "abundance", replicate.var = "replicate")
