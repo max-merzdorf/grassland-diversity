@@ -95,9 +95,6 @@ cl <- cl%>%
     str_detect(name, "glcm_homogeneity") ~ "GLCM Contrast group"
   ))
 
-#### Mann Whitney Test
-
-
 #### Violin plots
 p <- ggplot(cl, aes(x = site, y = value, group = predictorgroup)) +
   geom_violin() +
@@ -114,6 +111,25 @@ ggplot(cl, aes(x = bandgroup, y = value)) +
     title = "Values distribution per site"
   )
 
-# get a shortened version of the long format data frame as example for LaTeX
-cl_short <- cl[1:5,]
-xtable(cl_short)
+# MATCH COLUMN NAMES OF PLANET AND UAS RESULTS
+planet_metrics <- read.csv("./results/Planet_texture_metric_results.csv")
+uas_metrics <- read.csv("./results/UAS_texture_metric_results.csv")
+
+np <- colnames(planet_metrics)
+np <- gsub("window_", "RaoQ_w", np)
+np <- gsub("_std", "", np)
+np <- gsub("cv", "CV", np)
+colnames(planet_metrics) <- np
+
+nu <- colnames(uas_metrics)
+nu <- gsub("indow.", "", nu)
+nu <- gsub("_alpha.1_std", "", nu)
+nu <- gsub("coVar", "CV", nu)
+nu <- gsub("_std", "", nu)
+colnames(uas_metrics) <- nu
+nu %in% np # -> all true except agg
+
+write.csv(planet_metrics, file = "./results/Planet_texture_metric_results.csv",
+          row.names = F)
+write.csv(uas_metrics, file = "./results/UAS_texture_metric_results.csv",
+          row.names = F)
