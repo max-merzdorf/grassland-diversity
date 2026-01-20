@@ -62,7 +62,7 @@ uascombined <- uascombined %>%
     date == 20240812 ~ "August"
   ))
 
-#write.csv(round_df(uascombined, 4), "./UAS_texture_metric_results.csv", row.names = F)
+#write.csv(round_df(uascombined, 4), "./results/UAS_texture_metric_results.csv", row.names = F)
 
 
 ###### GROUPED VISUAL INSIGHTS #########
