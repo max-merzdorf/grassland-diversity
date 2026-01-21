@@ -12,6 +12,11 @@ richness <- read.csv("./results/Species_richness.csv")
 planet_metrics <- read.csv("./results/Planet_texture_metric_results.csv")
 uas_metrics <- read.csv("./results/UAS_texture_metric_results.csv")
 
+# remove sites with tree cover
+planet_metrics <- planet_metrics %>%
+  filter(!site %in% c("site16", "site17", "site18", "site19", "site20",
+                      "site24", "site25", "site26", "site27"))
+
 ###### 2 OBSERVARTIONS PART ##############################################
 # rename columns to match richness
 shannon <- shannon %>%
@@ -33,6 +38,8 @@ s <- richness %>%
 
 # Pearson for Planet species vars ----------------------------------------
 s_planet <- s %>%
+  filter(!site %in% c("site16", "site17", "site18", "site19", "site20",
+                      "site24", "site25", "site26", "site27")) %>%
   left_join(planet_metrics, by = c("site", "month"))
 
 ivs <- c("richness", "shannon", "turnover")
@@ -41,6 +48,7 @@ dvs <- s_planet %>%
   names %>%
   setdiff(ivs)
 
+# ungrouped
 planet_long <- expand_grid(iv = ivs, dv = dvs) %>%
   rowwise() %>%
   mutate(
@@ -53,7 +61,35 @@ planet_long <- expand_grid(iv = ivs, dv = dvs) %>%
   select(-test) %>%
   ungroup()
 
-#write.csv(planet_long, "./results/Planet_species_vars_pearson.csv", row.names = F)
+# group by Type?
+planet_long <- s_planet %>%
+  pivot_longer(
+    cols = all_of(dvs),
+    names_to = "dependent_var",
+    values_to = "dependent_value"
+  )
+
+planet_cor_results <- planet_long %>%
+  pivot_longer(
+    cols = all_of(ivs),
+    names_to = "independent_var",
+    values_to = "independent_value"
+  ) %>%
+  group_by(Type, independent_var, dependent_var) %>%
+  summarise(
+    test = list(
+      cor.test(independent_value, dependent_value, method = "pearson")
+    ),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    pearson_r = sapply(test, \(x) x$estimate),
+    p_value   = sapply(test, \(x) x$p.value),
+    n         = sapply(test, \(x) x$parameter + 2)
+  ) %>%
+  select(-test)
+
+#write.csv(planet_cor_results, "./results/Planet_species_vars_pearson.csv", row.names = F)
 
 # Pearson for UAS species vars -------------------------------------------
 uas_metrics <- uas_metrics %>%
@@ -102,20 +138,6 @@ uas_cor_results <- uas_long %>%
   select(-test)
 
 #write.csv(uas_cor_results, "./results/UAS_species_vars_pearson.csv", row.names = F)
-
-
-# ungrouped
-uas_cor_long <- expand_grid(iv = ivs, dv = dvs) %>%
-  rowwise() %>%
-  mutate(
-    pearson_r = cor(s_uas[[iv]], s_uas[[dv]],
-                    use = "pairwise.complete.obs",
-                    method = "pearson"),
-    test = list(cor.test(s_uas[[iv]], s_uas[[dv]], method = "pearson")),
-    p_value = test$p.value
-  ) %>%
-  select(-test) %>%
-  ungroup()
 
 # Species slopes ---------------------------------------------------------
 shannon_slopes <- shannon %>%
@@ -399,19 +421,20 @@ e <- env_params %>%
   )) %>%
   filter(month %in% c("April", "July", "August")) %>%
   mutate(site = paste0("site", siteID)) %>% # same colname as planet_metrics for grouping -> can drop siteID
-  select(-c(Col_run, all_vegetation, note, Sum.all, species_on_run, siteID, Sum.vegetation)) %>%
+  select(-c(Col_run, all_vegetation, note, Sum.all, species_on_run, siteID, Sum.vegetation))
+
+e_planet <- e %>%
+  filter(!site %in% c("site16", "site17", "site18", "site19", "site20",
+                      "site24", "site25", "site26", "site27")) %>%
   left_join(planet_metrics, by = c("site", "month"))
 
-predictor_names <- planet_metrics %>%
-  select(-c(date, site, month)) %>%
-  colnames()
-
 ivs <- c("veg_height_cm", "grasses", "herbs", "moss", "litter", "bare.soil")
-dvs <- e %>%
+dvs <- e_planet %>%
   select(-c(date, site, month, Type)) %>%
   names %>%
   setdiff(ivs)
 
+# ungrouped
 cor_long <- expand_grid(iv = ivs, dv = dvs) %>%
   rowwise() %>%
   mutate(
@@ -430,7 +453,35 @@ cor_long <- cor_long %>%
   select(-test) %>%
   ungroup()
 
-#write.csv(cor_long, "./results/Planet_structure_vars_pearson.csv", row.names = F)
+# group by Type
+planet_long <- e_planet %>%
+  pivot_longer(
+    cols = all_of(dvs),
+    names_to = "dependent_var",
+    values_to = "dependent_value"
+  )
+
+planet_cor_results <- planet_long %>%
+  pivot_longer(
+    cols = all_of(ivs),
+    names_to = "independent_var",
+    values_to = "independent_value"
+  ) %>%
+  group_by(Type, independent_var, dependent_var) %>%
+  summarise(
+    test = list(
+      cor.test(independent_value, dependent_value, method = "pearson")
+    ),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    pearson_r = sapply(test, \(x) x$estimate),
+    p_value   = sapply(test, \(x) x$p.value),
+    n         = sapply(test, \(x) x$parameter + 2)
+  ) %>%
+  select(-test)
+
+#write.csv(planet_cor_results, "./results/Planet_structure_vars_pearson.csv", row.names = F)
 
 # Pearson for UAS structure vars -----------------------------------------
 uas_metrics <- read.csv("./results/UAS_texture_metric_results.csv")
