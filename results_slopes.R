@@ -285,8 +285,97 @@ result <- predictor_summary %>%
 # 4 OBSERVATION PART #####################################################
 ##########################################################################
 
+#> As we have 4 observations per site now for both the y-variables
+#> veg. height [cm], % moss, % litter, ... as well as for the x-variables
+#> (by selecting all months instead of only April and July) we can now use
+#> the Pearson correlation to assess both strength and direction of the
+#> correlation
 
+# Planet pearson correlation ---------------------------------------------
+e <- env_params %>%
+  mutate(month = case_when(
+    Col_run == 1 ~ "April",
+    Col_run == 2 ~ "June",
+    Col_run == 3 ~ "July",
+    Col_run == 4 ~ "August",
+    Col_run == 5 ~ "September",
+  )) %>%
+  filter(month %in% c("April", "July", "August")) %>%
+  mutate(site = paste0("site", siteID)) %>% # same colname as planet_metrics for grouping -> can drop siteID
+  select(-c(Col_run, all_vegetation, note, Sum.all, species_on_run, siteID, Sum.vegetation)) %>%
+  left_join(planet_metrics, by = c("site", "month"))
 
+predictor_names <- planet_metrics %>%
+  select(-c(date, site, month)) %>%
+  colnames()
+
+ivs <- c("veg_height_cm", "grasses", "herbs", "moss", "litter", "bare.soil")
+dvs <- e %>%
+  select(-c(date, site, month, Type)) %>%
+  names %>%
+  setdiff(ivs)
+
+cor_long <- expand_grid(iv = ivs, dv = dvs) %>%
+  rowwise() %>%
+  mutate(
+    pearson_r = cor(e[[iv]], e[[dv]],
+                    use = "pairwise.complete.obs",
+                    method = "pearson")
+  ) %>%
+  ungroup()
+
+cor_long <- cor_long %>%
+  rowwise() %>%
+  mutate(
+    test = list(cor.test(e[[iv]], e[[dv]], method = "pearson")),
+    p_value = test$p.value
+  ) %>%
+  select(-test) %>%
+  ungroup()
+
+# UAS Pearson correlation ------------------------------------------------
+euas <- env_params %>%
+  mutate(month = case_when(
+    Col_run == 1 ~ "April",
+    Col_run == 2 ~ "June",
+    Col_run == 3 ~ "July",
+    Col_run == 4 ~ "August",
+    Col_run == 5 ~ "September",
+  )) %>%
+  filter(month %in% c("April", "July", "August")) %>%
+  filter(siteID %in% c(8, 10, 14)) %>%
+  mutate(site = paste0("site", siteID)) %>% # same colname as planet_metrics for grouping -> can drop siteID
+  select(-c(Col_run, all_vegetation, note, Sum.all, species_on_run, siteID, Sum.vegetation)) %>%
+  left_join(planet_metrics, by = c("site", "month"))
+
+uas_predictor_names <- uas_metrics %>%
+  select(-c(date, site, month, agg)) %>%
+  colnames()
+
+ivs <- c("veg_height_cm", "grasses", "herbs", "moss", "litter", "bare.soil")
+dvs <- euas %>%
+  select(-c(date, site, month, Type)) %>%
+  names %>%
+  setdiff(ivs)
+
+uas_cor_long <- expand_grid(iv = ivs, dv = dvs) %>%
+  rowwise() %>%
+  mutate(
+    pearson_r = cor(euas[[iv]], euas[[dv]],
+                    use = "pairwise.complete.obs",
+                    method = "pearson")
+  ) %>%
+  ungroup()
+
+# add p values
+uas_cor_long <- uas_cor_long %>%
+  rowwise() %>%
+  mutate(
+    test = list(cor.test(euas[[iv]], euas[[dv]], method = "pearson")),
+    p_value = test$p.value
+  ) %>%
+  select(-test) %>%
+  ungroup()
 
 # THE SCRAPYEARD ---------------------------------------------------------
 
