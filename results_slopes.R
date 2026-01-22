@@ -149,12 +149,12 @@ shannon_slopes <- shannon %>%
   mutate(
     shannon_slope = July - April
   ) %>%
-  select(Site.No, shannon_slope)
+  select(siteID, shannon_slope)
 
 # sanity check (for the script, not me)
-jul <- shannon$shannon[shannon$Site.No == 1 & shannon$month == "July"]
-apr <- shannon$shannon[shannon$Site.No == 1 & shannon$month == "April"]
-if(jul -  apr == shannon_slopes$shannon_slope[shannon_slopes$Site.No == 1]){
+jul <- shannon$shannon[shannon$siteID == 1 & shannon$month == "July"]
+apr <- shannon$shannon[shannon$siteID == 1 & shannon$month == "April"]
+if(jul -  apr == shannon_slopes$shannon_slope[shannon_slopes$siteID == 1]){
   print("Hooray")
 } else {
   print("oh god")
@@ -170,11 +170,11 @@ turnover_slopes <- turnover %>%
   mutate(
     turnover_slope = July - April
   ) %>%
-  select(site, turnover_slope)
+  select(siteID, turnover_slope)
 # sanity check
-jul <- turnover$turnover[turnover$site == 1 & turnover$month == "July"]
-apr <- turnover$turnover[turnover$site == 1 & turnover$month == "April"]
-if(jul -  apr == turnover_slopes$turnover_slope[turnover_slopes$site == 1]){
+jul <- turnover$turnover[turnover$siteID == 1 & turnover$month == "July"]
+apr <- turnover$turnover[turnover$siteID == 1 & turnover$month == "April"]
+if(jul -  apr == turnover_slopes$turnover_slope[turnover_slopes$siteID == 1]){
   print("Hooray")
 } else {
   print("oh god")
@@ -182,11 +182,11 @@ if(jul -  apr == turnover_slopes$turnover_slope[turnover_slopes$site == 1]){
 rm(apr, jul)
 
 richness_slopes <- richness %>%
-  select(siteID, month, species_on_run) %>%
+  select(siteID, month, richness) %>%
   filter(month %in% c("April", "July")) %>%
   pivot_wider(
     names_from = month,
-    values_from = species_on_run
+    values_from = richness
   ) %>%
   mutate(
     richness_slope = July - April
@@ -194,11 +194,11 @@ richness_slopes <- richness %>%
   select(siteID, richness_slope)
 
 shannon_slopes <- shannon_slopes %>%
-  mutate(site = paste0("site", Site.No)) %>%
+  mutate(site = paste0("site", siteID)) %>%
   select(site, shannon_slope)
 
 turnover_slopes <- turnover_slopes %>%
-  mutate(site = paste0("site", site)) %>%
+  mutate(site = paste0("site", siteID)) %>%
   select(site, turnover_slope)
 
 richness_slopes <- richness_slopes %>%
