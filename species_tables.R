@@ -2,7 +2,6 @@
 # Species turnover: Delta of unique species (how different is the species composition from apr -> may)
 library(tidyverse)
 library(vegan)
-library(codyn)
 
 env_params <- read.table("./data/_tables/_analysisready_env_params.csv")
 allspecies <- read.table("./data/_tables/_analysisready_allspecies.csv")
@@ -81,7 +80,7 @@ for (i in sites){
   gained <- as.numeric(summary(occ_2 %in% occ_1)["FALSE"][[1]]) # number of FALSE: species gained
   
   t1 <- 1
-  t2 <- (gained + lost) / length(occ_2)
+  t2 <- (gained + lost) / length(occ_spec)
   writeLines(paste0("Site",i, "\n",
     " Turnover April: ", t1, "\n",
     " Turnover July: ", t2))
@@ -91,24 +90,40 @@ for (i in sites){
 }
 
 df <- data.frame(site = site, month = mon, turnover = t)
-
 #write.csv(df, "./results/Species_turnover.csv", row.names = F)
 
-# previous approach: -----------------------------------------------------
-turnover <- allspecies %>%
-  filter(month %in% c("April", "July")) %>%
-  group_by(Site.No, month) %>%
-  summarise(Species = list(unique(Species)), .groups = "drop") %>%
-  tidyr::pivot_wider(names_from = month, values_from = Species) %>%
-  mutate(
-    gained = lengths(setdiff(July, April)),
-    lost   = lengths(setdiff(April, July)),
-    turnover = gained - lost
-  ) %>%
-  select(Site.No, turnover)
-#> only produces diff in spec number
-
-#write.csv(turnover, "./results/Species_turnover.csv", row.names = F)
-# test codyn pkg
+# codyn turnover test
 library(codyn)
-t <- turnover(collins08, time.var = "year", species.var = "species", abundance.var = "abundance", replicate.var = "replicate")
+c <- collins08 %>%
+  filter(year %in% c(1984, 1985, 1986))
+turnover(c, time.var = "year", species.var = "species", abundance.var = "abundance", replicate.var = "replicate")
+# turnover 1985 annually burned: 0.2372881
+
+c <- c %>%
+  filter(!year %in% c(1986)) %>%
+  filter(replicate %in% "annually burned")
+
+occ1 <- c %>%
+  filter(year == 1984) %>%
+  select(species) %>%
+  unique()
+
+occ2 <- c %>%
+  filter(year == 1985) %>%
+  select(species) %>%
+  unique()
+
+lost <- as.numeric(summary(occ1$species %in% occ2$species)["FALSE"][[1]]) # number of FALSE: species lost
+gained <- as.numeric(summary(occ2$species %in% occ1$species)["FALSE"][[1]]) # number of FALSE: species gained
+
+t2 <- (gained + lost) / length(unique(c$species))
+
+# species richness table -------------------------------------------------
+sprich <- subset(e, month == "April" | month == "July")
+sprich <- sprich %>%
+  select(siteID, Type, species_on_run, month)
+
+write.csv(sprich, "./results/Species_richness.csv", row.names = F)
+
+# 4 observation slope tables ---------------------------------------------
+
