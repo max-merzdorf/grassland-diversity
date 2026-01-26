@@ -3,8 +3,6 @@ library(dplyr)
 library(ggplot2)
 library(terra)
 
-source("./helper_functions.R")
-
 env_params <- read.table("./data/_tables/_analysisready_env_params.csv")
 shannon <- read.csv("./results/ShannonH_per_site.csv")
 turnover <- read.csv("./results/Species_turnover.csv")
@@ -305,7 +303,7 @@ predictor_diff_summary <- slope_comparison %>%
 result <- predictor_summary %>%
   left_join(predictor_diff_summary, by = "predictor")
 
-#write.csv(result, file="./results/Planet_Results_FINAL.csv", row.names = F)
+#write.csv(result, file="./results/Planet_slopes_FINAL.csv", row.names = F)
 
 
 # UAS predictor slopes ---------------------------------------------------
@@ -400,7 +398,7 @@ predictor_diff_summary <- slope_comparison %>%
 result <- predictor_summary %>%
   left_join(predictor_diff_summary, by = c("predictor", "agg"))
 
-#write.csv(result, file="./results/UAS_Results_FINAL.csv", row.names = F)
+#write.csv(result, file="./results/UAS_slopes_FINAL.csv", row.names = F)
 
 # 4 OBSERVATION PART #####################################################
 
