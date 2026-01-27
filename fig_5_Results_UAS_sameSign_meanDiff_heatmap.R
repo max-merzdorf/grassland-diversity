@@ -18,18 +18,35 @@ u <- uas_slopes %>%
     .groups = "drop"
   ) %>%
   mutate(
-    rank_ss_S = rank(prop_same_sign_shannon, ties.method = "average"),
-    rank_ss_T = rank(prop_same_sign_turnover, ties.method = "average"),
-    rank_ss_R = rank(prop_same_sign_richness, ties.method = "average"),
-    ranksum_ss_X = rank_ss_S + rank_ss_T + rank_ss_R
+    across(starts_with("prop_"), ~ na_if(., 0))
+  ) %>%
+  # can I use case_when to replace same_sign == 0 with NA and do the same in the rank rows of the same predictors?
+  mutate(
+    rank_ss_S = rank(prop_same_sign_shannon,  ties.method = "average", na.last = "keep"),
+    rank_ss_T = rank(prop_same_sign_turnover, ties.method = "average", na.last = "keep"),
+    rank_ss_R = rank(prop_same_sign_richness, ties.method = "average", na.last = "keep")
+  ) %>%
+  mutate(ranksum_ss_X = rowSums(
+    select(., starts_with("rank_ss")),
+    na.rm = T)
   ) %>%
   mutate(
-    rank_delta_S = rank(mean_diff_shannon, ties.method = "average"),
-    rank_delta_T = rank(mean_diff_turnover, ties.method = "average"),
-    rank_delta_R = rank(mean_diff_richness, ties.method = "average"),
-    ranksum_delta_X = rank_delta_S + rank_delta_T + rank_delta_R
-  )
+    rank_delta_S = rank(-abs(mean_diff_shannon), ties.method = "average"),
+    rank_delta_T = rank(-abs(mean_diff_turnover), ties.method = "average"),
+    rank_delta_R = rank(-abs(mean_diff_richness), ties.method = "average")
+  ) %>%
+  mutate(ranksum_delta_X = rowSums(
+    select(., starts_with("rank_delta")),
+    na.rm = T
+  )) %>%
+  mutate(ranksum = ranksum_delta_X + ranksum_ss_X)
 
+u %>%
+  select(prop_same_sign_shannon, rank_ss_S)
+u %>%
+  select(mean_diff_shannon, rank_delta_S)
+
+#########
 # visualise UAS slopes same sign
 u_ss <- u %>%
   select(c(predictor, agg, ranksum_ss_X, starts_with("rank_ss"))) %>%
@@ -57,9 +74,8 @@ ggplot(u_mean, aes(x = name, y = reorder(predictor, ranksum_delta_X, FUN = mean)
 # both in one?
 u_both <- u %>%
   select(c(predictor, agg, starts_with("rank"))) %>%
-  mutate(ranksum = ranksum_delta_X + ranksum_ss_X) %>%
-  select(-c(ranksum_delta_X, ranksum_ss_X)) %>%
-  pivot_longer(-c(predictor, agg, ranksum)) %>%
+  select(-c(ranksum_ss_X, ranksum)) %>%
+  pivot_longer(-c(predictor, agg, ranksum_delta_X)) %>%
   # rename some stuff
   mutate(res = factor(
     case_when(
@@ -69,8 +85,8 @@ u_both <- u %>%
               ), levels = c("3 cm", "6 cm", "12 cm")),
   name = str_remove(name, "^rank_"))
 
-both <- ggplot(u_both, aes(x = interaction(name, res, sep = " | "),
-                           y = reorder(predictor, ranksum, FUN = mean),
+both <- ggplot(u_both, aes(x = interaction(name, res, sep = ": "),
+                           y = reorder(predictor, ranksum_delta_X, FUN = mean),
                            fill = value)) +
   geom_tile(color = "white", lwd = .5) +
   scale_fill_viridis_c(name = "Rank avg.") +
@@ -78,7 +94,8 @@ both <- ggplot(u_both, aes(x = interaction(name, res, sep = " | "),
   ylab("Predictor name") +
   xlab("Ranked target variables delta of slopes and same sign ranks, per resolution") +
   guides(fill = guide_colourbar(barwidth = 0.5, barheight = 20)) +
-  scale_x_discrete(guide = guide_axis(n.dodge=2))
+  scale_x_discrete(guide = guide_axis(n.dodge=3))
 both
 ggsave(filename = "./images/5_Results_UAS_sameSign_meanDiff_ranks.png", plot = both,
        width = 3000, height = 2000, units = "px", dpi = 300)
+write.csv(u , "./result_tables/Fig_5_2_data.csv", row.names = F)
