@@ -210,7 +210,17 @@ predictor_cols <- planet_metrics %>%
   colnames()
 predictor_cols
 
-planet_long <- planet_metrics %>%
+# add type back to planet_metrics
+mgmt_type <- env_params %>%
+  filter(Col_run == 1) %>%
+  select(c(siteID, Type)) %>%
+  mutate(site = paste0("site", siteID)) %>%
+  select(-siteID)
+
+p <- planet_metrics %>%
+  left_join(mgmt_type, by = "site")
+
+planet_long <- p %>%
   filter(month %in% c("April", "July")) %>%
   pivot_longer(
     cols = all_of(predictor_cols),
@@ -219,7 +229,7 @@ planet_long <- planet_metrics %>%
   )
 
 predictor_slopes <- planet_long %>%
-  group_by(site, predictor, month) %>%
+  group_by(site, predictor, month, Type) %>%
   summarise(
     # without summareise we get 2 columns and all July slopes will be NA
     value = mean(value, na.rm = TRUE),
@@ -232,7 +242,7 @@ predictor_slopes <- planet_long %>%
   mutate(
     predictor_slope = July - April
   ) %>%
-  select(site, predictor, predictor_slope)
+  select(site, predictor, predictor_slope, Type)
 
 # sanity check
 apr <- planet_long$value[planet_long$site == "site1" & planet_long$month == "April" & planet_long$predictor == "B1_CV"]
@@ -256,7 +266,7 @@ slope_comparison <- slope_comparison %>%
   )
 
 predictor_summary <- slope_comparison %>%
-  group_by(predictor) %>%
+  group_by(predictor, Type) %>%
   summarise(
     prop_same_sign_shannon = sum(same_sign_shannon, na.rm = TRUE) / n(),
     prop_same_sign_turnover = sum(same_sign_turnover, na.rm = TRUE) / n(),
@@ -285,7 +295,7 @@ slope_comparison <- slope_comparison %>%
 
 # then summarise
 predictor_diff_summary <- slope_comparison %>%
-  group_by(predictor) %>%
+  group_by(predictor, Type) %>%
   summarise(
     n_sites_shannon = sum(!is.na(slope_diff_shannon)),
     mean_diff_shannon = mean(slope_diff_shannon, na.rm = TRUE),
@@ -301,9 +311,11 @@ predictor_diff_summary <- slope_comparison %>%
   )
 
 result <- predictor_summary %>%
-  left_join(predictor_diff_summary, by = "predictor")
+  left_join(predictor_diff_summary, by = c("predictor", "Type"))
 
 #write.csv(result, file="./results/Planet_slopes_FINAL.csv", row.names = F)
+#write.csv(result, file="./results/ACTUAL_RESULTS/Planet_slopes_FINAL_Type_grouped.csv", row.names = F)
+
 
 
 # UAS predictor slopes ---------------------------------------------------
@@ -359,9 +371,9 @@ slope_comparison <- slope_comparison %>%
 predictor_summary <- slope_comparison %>%
   group_by(predictor, agg) %>%
   summarise(
-    prop_same_sign_shannon = sum(same_sign_shannon, na.rm = TRUE) / n(),
-    prop_same_sign_turnover = sum(same_sign_turnover, na.rm = TRUE) / n(),
-    prop_same_sign_richness = sum(same_sign_richness, na.rm = TRUE) / n()
+    prop_same_sign_shannon = sum(same_sign_shannon, na.rm = T) / n(),
+    prop_same_sign_turnover = sum(same_sign_turnover, na.rm = T) / n(),
+    prop_same_sign_richness = sum(same_sign_richness, na.rm = T) / n()
   )
 
 slope_comparison <- slope_comparison %>%
