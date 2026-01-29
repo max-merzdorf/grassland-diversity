@@ -65,6 +65,8 @@ both <- ggplot(u_both, aes(x = name,
   facet_wrap(~ Type, nrow = 1) +
   scale_fill_viridis_c(name = "Rank avg.") +
   theme_light() +
+  theme(strip.text = element_text(face = "bold"),
+        strip.background = element_rect(fill = "grey50", color = "grey50")) +
   ylab("Predictor name") +
   xlab("Ranked target variables delta of slopes and same sign ranks, per resolution") +
   guides(fill = guide_colourbar(barwidth = 0.5, barheight = 20)) +
