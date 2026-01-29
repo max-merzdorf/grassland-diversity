@@ -85,16 +85,18 @@ u_both <- u %>%
               ), levels = c("3 cm", "6 cm", "12 cm")),
   name = str_remove(name, "^rank_"))
 
-both <- ggplot(u_both, aes(x = interaction(name, res, sep = ": "),
+both <- ggplot(u_both, aes(x = name,
                            y = reorder(predictor, ranksum_delta_X, FUN = mean),
                            fill = value)) +
   geom_tile(color = "white", lwd = .5) +
+  facet_wrap(~ res, nrow = 1) +
   scale_fill_viridis_c(name = "Rank avg.") +
   theme_light() +
   ylab("Predictor name") +
-  xlab("Ranked target variables delta of slopes and same sign ranks, per resolution") +
+  xlab("Ranked target variables delta of slopes and TTD ranks") +
   guides(fill = guide_colourbar(barwidth = 0.5, barheight = 20)) +
-  scale_x_discrete(guide = guide_axis(n.dodge=3))
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  labs(title = "UAS predictors ranked by sum of average scores, grouped by resolution")
 both
 ggsave(filename = "./images/5_Results_UAS_sameSign_meanDiff_ranks.png", plot = both,
        width = 3000, height = 2000, units = "px", dpi = 300)
