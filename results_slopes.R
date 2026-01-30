@@ -431,7 +431,13 @@ e <- env_params %>%
   )) %>%
   filter(month %in% c("April", "July", "August")) %>%
   mutate(site = paste0("site", siteID)) %>% # same colname as planet_metrics for grouping -> can drop siteID
-  select(-c(Col_run, all_vegetation, note, Sum.all, species_on_run, siteID, Sum.vegetation))
+  select(-c(Col_run, all_vegetation, note, Sum.all, species_on_run, siteID, Sum.vegetation)) %>%
+  mutate(Type = factor(case_when(
+    Type == "int_prox" ~ "int",
+    Type == "int_cit" ~ "int",
+    Type == "ext_prox" ~ "ext",
+    .default = Type
+  ), levels = c("int", "ext", "semi_nat")))
 
 e_planet <- e %>%
   filter(!site %in% c("site16", "site17", "site18", "site19", "site20",
@@ -443,25 +449,6 @@ dvs <- e_planet %>%
   select(-c(date, site, month, Type)) %>%
   names %>%
   setdiff(ivs)
-
-# ungrouped
-cor_long <- expand_grid(iv = ivs, dv = dvs) %>%
-  rowwise() %>%
-  mutate(
-    pearson_r = cor(e[[iv]], e[[dv]],
-                    use = "pairwise.complete.obs",
-                    method = "pearson")
-  ) %>%
-  ungroup()
-
-cor_long <- cor_long %>%
-  rowwise() %>%
-  mutate(
-    test = list(cor.test(e[[iv]], e[[dv]], method = "pearson")),
-    p_value = test$p.value
-  ) %>%
-  select(-test) %>%
-  ungroup()
 
 # group by Type
 planet_long <- e_planet %>%
@@ -491,7 +478,26 @@ planet_cor_results <- planet_long %>%
   ) %>%
   select(-test)
 
-#write.csv(planet_cor_results, "./results/Planet_structure_vars_pearson.csv", row.names = F)
+#write.csv(planet_cor_results, "./results/ACTUAL_RESULTS/Planet_structure_vars_pearson.csv", row.names = F)
+
+# ungrouped
+cor_long <- expand_grid(iv = ivs, dv = dvs) %>%
+  rowwise() %>%
+  mutate(
+    pearson_r = cor(e[[iv]], e[[dv]],
+                    use = "pairwise.complete.obs",
+                    method = "pearson")
+  ) %>%
+  ungroup()
+
+cor_long <- cor_long %>%
+  rowwise() %>%
+  mutate(
+    test = list(cor.test(e[[iv]], e[[dv]], method = "pearson")),
+    p_value = test$p.value
+  ) %>%
+  select(-test) %>%
+  ungroup()
 
 # Pearson for UAS structure vars -----------------------------------------
 uas_metrics <- read.csv("./results/UAS_texture_metric_results.csv")

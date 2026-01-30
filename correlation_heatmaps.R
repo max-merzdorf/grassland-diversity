@@ -1,13 +1,15 @@
 library(ggplot2)
 library(tidyverse)
 
-s8 <- read.table("./results/species_richness/site8_species_richness_agg2_slopes.xml", sep=",")
-s10 <- read.table("./results/species_richness/site10_species_richness_agg2_slopes.xml", sep=",")
-s14 <- read.table("./results/species_richness/site14_species_richness_agg2_slopes.xml", sep=",")
+agg_factor <- 1
+nlevels <- 32
+
+s8 <- read.table(paste0("./results/species_richness/site8_species_richness_n",nlevels,"_agg",agg_factor,"_slopes.xml"), sep=",")
+s10 <- read.table(paste0("./results/species_richness/site10_species_richness_n",nlevels,"_agg",agg_factor,"_slopes.xml"), sep=",")
+s14 <- read.table(paste0("./results/species_richness/site14_species_richness_n",nlevels,"_agg",agg_factor,"_slopes.xml"), sep=",")
 
 rnames <- gsub("site8_","", rownames(s8))
 rnames <- gsub(".time_intervals", "", rnames)
-rnames
 
 delta_slopes <- data.frame(s8$slopes_diff, s10$slopes_diff, s14$slopes_diff)
 rownames(delta_slopes) <- rnames
@@ -26,7 +28,7 @@ df_long <- df_long %>%
   mutate(predictor = reorder(predictor, sum))  # reorder by sum
 
 
-png(filename="./images/graphs/glcm_predictor_performance.jpg",
+png(filename=paste0("./images/graphs/glcm_predictor_performance_n",nlevels,"_agg",agg_factor,".jpg"),
     width = 1980,
     height=1080,
     res = 210)

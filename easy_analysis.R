@@ -105,12 +105,12 @@ metrics_stats <- global(x = metrics,
 # clarify population standard deviation in name, as we add coefficient of
 # variation to the same dataframe later
 rownames(metrics_stats) <- paste0(rownames(metrics_stats), "_std")
-predictor_names <- unique(gsub("\\d{8}_site\\d{1,2}_", "",
-                               rownames(metrics_stats)))
 
 # bind the dataframes
 colnames(cvdf) <- "std"
-rbind(metrics_stats, cvdf)
+metrics_stats <- rbind(metrics_stats, cvdf)
+predictor_names <- unique(gsub("\\d{8}_site\\d{1,2}_", "",
+                               rownames(metrics_stats)))
 
 mat <- matrix(metrics_stats$std,
               ncol = 4,
@@ -123,11 +123,24 @@ rownames(metstats) <- predictor_names
 # following and transpose the data frame so that dates are in columns:
 metrics_stat_derivs <- as.data.frame(t(metstats))
 
+##########################################################################
+# WRITE RESULTING DATA FRAME
+tabname <- paste0("UAS_site",site_nr,"_agg",agg_factor,"_metrics.csv")
+write.table(metrics_stat_derivs,
+            paste0("./results/metric_tables/", tabname),
+            sep = ",", dec = ".")
+
+
+
+
+
+
+
 # remove june from env_params (no UAV image that month)
 env_params <- subset(env_params, env_params$Col_run != 2)
 
 # get number of spectral bands
-bands <- nlyr(metrics) / ncol(metrics_stat_derivs)
+bands <- 4
 
 ### Species richness
 
@@ -168,3 +181,4 @@ res <- linear_modeling(png_name = png_name,
                        y_var = y_points,
                        c(1,3,4,5),
                        bands)
+
