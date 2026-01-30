@@ -5,8 +5,13 @@ pixel_history <- function(r, npx){
   
   stopifnot(inherits(r, "SpatRaster"))
   
+  all_vals <- terra::values(r)
+  
+  # Identify complete cells (no NA in ANY layer)
+  valid_cells <- which(stats::complete.cases(all_vals))
+  
   # randomly select cell numbers
-  cells <- sample(terra::ncell(r), npx)
+  cells <- sample(valid_cells, npx)
   
   # extract values
   vals <- terra::extract(r, cells)
