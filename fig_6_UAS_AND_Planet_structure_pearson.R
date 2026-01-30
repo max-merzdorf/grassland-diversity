@@ -5,6 +5,35 @@ library(forcats)
 # r value on y, predictor on x, 
 
 uas_pearson <- read.csv("./results/ACTUAL_RESULTS/UAS_structure_vars_pearson.csv")
+planet_pearson <- read.csv("./results/ACTUAL_RESULTS/Planet_structure_vars_pearson.csv")
+
+# add planet as fourth resolution:
+planet_df <- planet_pearson %>%
+  select(-Type) %>%
+  mutate(agg = "agg10") %>%
+  mutate(abs_r = abs(pearson_r)) %>%
+  group_by(dependent_var) %>%
+  mutate(mean_abs_r = mean(abs_r, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(
+    dependent_var = fct_reorder(dependent_var, mean_abs_r)
+  )
+
+planet_collapsed <- planet_pearson %>%
+  group_by(independent_var, dependent_var) %>%
+  summarise(
+    pearson_r = mean(pearson_r, na.rm = TRUE),
+    p_value   = mean(p_value, na.rm = TRUE),
+    .groups   = "drop"
+  ) %>%
+  mutate(agg = "agg10") %>%
+  mutate(abs_r = abs(pearson_r)) %>%
+  group_by(dependent_var) %>%
+  mutate(mean_abs_r = mean(abs_r, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(
+    dependent_var = fct_reorder(dependent_var, mean_abs_r)
+  )
 
 ## Plot
 
@@ -20,11 +49,13 @@ plot_df <- uas_pearson %>%
 
 # bind rows:
 plot_df <- plot_df %>%
+  bind_rows(planet_collapsed) %>%
   mutate(agg = factor(case_when(
     agg == "agg1" ~ "3 cm",
     agg == "agg2" ~ "6 cm",
-    agg == "agg4" ~ "12 cm"
-  ), levels = c("3 cm", "6 cm", "12 cm"))) %>%
+    agg == "agg4" ~ "12 cm",
+    agg == "agg10" ~ "300 cm"
+  ), levels = c("3 cm", "6 cm", "12 cm", "300 cm"))) %>%
   mutate(
     dependent_var = fct_reorder(dependent_var, mean_abs_r, .desc = F)
   )
@@ -51,7 +82,7 @@ p <- ggplot(plot_df, aes(
     strip.text = element_text(face = "bold"),
     strip.background = element_rect(fill = "grey50", color = "grey50")
   ) +
-  labs(title = "UAS absolute difference of pearson correlation grouped by resolutions")
+  labs(title = "UAS and PlanetScope absolute difference of pearson correlation grouped by resolutions")
 p
 # sanity checks to see if factor ordering works in the plot
 plot_df %>%
