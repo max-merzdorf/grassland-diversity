@@ -215,7 +215,14 @@ mgmt_type <- env_params %>%
   filter(Col_run == 1) %>%
   select(c(siteID, Type)) %>%
   mutate(site = paste0("site", siteID)) %>%
-  select(-siteID)
+  select(-siteID) %>%
+  mutate(Type = factor(case_when(
+    Type == "int_prox" ~ "int",
+    Type == "int_cit" ~ "int",
+    Type == "ext_prox" ~ "ext",
+    Type == "ext_cit" ~ "ext",
+    .default = Type
+  ), levels = c("int", "ext", "semi_nat")))
 
 p <- planet_metrics %>%
   left_join(mgmt_type, by = "site")
