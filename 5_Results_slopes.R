@@ -417,7 +417,7 @@ predictor_diff_summary <- slope_comparison %>%
 result <- predictor_summary %>%
   left_join(predictor_diff_summary, by = c("predictor", "agg"))
 
-#write.csv(result, file="./results/UAS_slopes_FINAL.csv", row.names = F)
+#write.csv(result, file="./results/ACTUAL_RESULTS/UAS_slopes_FINAL.csv", row.names = F)
 
 # 4 OBSERVATION PART #####################################################
 
@@ -443,6 +443,7 @@ e <- env_params %>%
     Type == "int_prox" ~ "int",
     Type == "int_cit" ~ "int",
     Type == "ext_prox" ~ "ext",
+    Type == "ext_cit" ~ "ext",
     .default = Type
   ), levels = c("int", "ext", "semi_nat")))
 

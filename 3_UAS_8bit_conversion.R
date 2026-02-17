@@ -1,5 +1,6 @@
 # Cut the 99th percentile of UAS float data and convert to 8-bit,
 # write to disk
+# > Ran script for each site nr separately
 
 library(terra)
 site_nr <- 14

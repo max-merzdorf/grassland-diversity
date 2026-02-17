@@ -79,7 +79,7 @@ for (i in sites){
   lost <- as.numeric(summary(occ_1 %in% occ_2)["FALSE"][[1]]) # number of FALSE: species lost
   gained <- as.numeric(summary(occ_2 %in% occ_1)["FALSE"][[1]]) # number of FALSE: species gained
   
-  t1 <- 1
+  t1 <- 0.5
   t2 <- (gained + lost) / length(occ_spec)
   writeLines(paste0("Site",i, "\n",
     " Turnover April: ", t1, "\n",
@@ -127,3 +127,6 @@ write.csv(sprich, "./results/Species_richness.csv", row.names = F)
 
 # 4 observation slope tables ---------------------------------------------
 
+###### For chapter 2
+allspecies <- allspecies[allspecies$Coverage_londo != "int_prox",]
+unique(allspecies$Species)

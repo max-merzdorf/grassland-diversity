@@ -142,11 +142,6 @@ library(sf)
 uas <- rast("./data/_raster/original/20240408_site10_resampled_georef_clipped_aligned.tif")
 plots <- subplots <- st_read("./data/_vector/subplots_rectangles.gpkg")
 
-### TEST RAO and SHANNON ###
-rao <- rasterdiv::paRao(agg[[1]], alpha = 2)
-
-
-
 ###### Delta slopes absolute differneces (boxplots) ######
 d_slopes_long <- pivot_longer(delta_slopes, cols=colnames(delta_slopes))
 
@@ -157,3 +152,35 @@ p <- ggplot(d_slopes_long, aes(x=name, y=value, fill=name)) +
 png(filename = "./images/graphs/d_slopes_speciesRichness_textureMetrics.png", width = 1980, height = 1080, res=300)
 p
 dev.off()
+
+### TEST RAO and SHANNON ###
+library(rasterdiv)
+library(terra)
+img <- terra::rast("./data/_raster/original/20240408_site10_resampled_georef_aligned_8bit.tif")
+img <- as.int(img)
+rao <- paRao(as.int(stack), window = 9, dist_m = "euclidean", alpha = 1, simplify = 4)
+
+
+### DIFF 8-BIT AND FLOAT COEFFICIENT OF VARIATION ###
+library(terra)
+source("./helper_functions.R")
+plots <- sf::st_read("./data/_vector/_analysisready_plots.gpkg")
+
+float <- rast("./data/_raster/original/20240408_site10_resampled_georef_clipped_aligned.tif")
+int <- rast("./data/_raster/original/20240408_site10_resampled_georef_aligned_8bit_scene_stretch.tif")
+
+float <- terra::crop(float, plots$geom[plots$siteID == 10])
+int <- terra::crop(int, plots$geom[plots$siteID == 10])
+
+cv(matrix(float))
+cv(matrix(int))
+
+### PLANET SCENES BANDS TABLE
+apr <- terra::rast("./data/_raster/planet/20240408_093512_94_24af_3B_AnalyticMS_SR_8b_anchor_clip_reproject_bandmath.tif")
+apr
+may <- terra::rast("./data/_raster/planet/20240513_102643_34_24fb_3B_AnalyticMS_SR_8b_clip_bandmath.tif")
+summary(may)
+july <- terra::rast("./data/_raster/planet/20240709_103739_55_247f_3B_AnalyticMS_SR_8b_clip_bandmath.tif")
+summary(july)
+aug <- terra::rast("./data/_raster/planet/20240812_104320_10_247a_3B_AnalyticMS_SR_8b_coreg_clip_reproject_bandmath.tif")
+summary(aug)

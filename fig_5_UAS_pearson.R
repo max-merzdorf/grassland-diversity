@@ -74,3 +74,37 @@ plot_df %>%
 
 ggsave(filename = "./images/5_Results_UAS_pearson.png", plot = p,
        width = 3000, height = 2000, units = "px", dpi = 300)
+
+dvs <- c("B2_glcm_entropy", "B2_glcm_ASM", "B3_glcm_homogeneity", "B3_glcm_entropy", "B3_glcm_dissimilarity", "B3_glcm_ASM")
+ivs <- c("bare.soil", "moss")
+res <- c("3 cm")
+
+for(i in dvs){
+  df <- plot_df %>%
+    filter(dependent_var == i)
+  for(j in ivs){
+    m <- df %>%
+      filter(independent_var == j) %>%
+      select(abs_r) %>%
+      pull() %>%
+      mean()
+    writeLines(paste0(i, " / ", j, " mean: ", m))
+  }
+}
+
+calc_means <- function(df, dvs, ivs, res, value_col = abs_r) {
+  df %>%
+    filter(dependent_var %in% dvs,
+           independent_var %in% ivs,
+           agg %in% res) %>%
+    group_by(dependent_var, independent_var, agg) %>%
+    summarise(
+      mean = mean({{ value_col }}, na.rm = TRUE),
+      .groups = "drop"
+    )
+}
+
+calc_means(plot_df,
+           dvs = c("B4_RaoQ_w5", "B4_RaoQ_w7"),
+           ivs = c("litter"),
+           res = c("3 cm", "12 cm"))

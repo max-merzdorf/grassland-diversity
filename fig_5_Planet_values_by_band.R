@@ -19,7 +19,8 @@ plotty <- ggplot(p, aes(x = name, y = value, fill = band)) +
   xlab("Predictor name") +
   ylab("Value") +
   labs(title = "PlanetScope predictor values grouped by band") +
-  scale_x_discrete(guide = guide_axis(n.dodge=2))
+  scale_x_discrete(guide = guide_axis(n.dodge=2)) +
+  ylim(c(0,30))
 plotty
 ggsave(filename = "./images/5_Planet_predictor_values_by_band.png", plot = plotty,
-       width = 3000, height = 2000, units = "px", dpi = 300)
+       width = 3000, height = 1500, units = "px", dpi = 300)

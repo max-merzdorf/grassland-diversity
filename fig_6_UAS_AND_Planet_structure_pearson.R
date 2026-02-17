@@ -103,5 +103,5 @@ plot_df %>%
   pull() %>%
   mean()
 
-ggsave(filename = "./images/5_Results_UAS_pearson.png", plot = p,
+ggsave(filename = "./images/6_Discussion_UAS_AND_Planet_pearson_structure_vars.png", plot = p,
        width = 3000, height = 2000, units = "px", dpi = 300)

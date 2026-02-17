@@ -39,5 +39,31 @@ p <- ggplot(plot_df, aes(
   labs(title = "PlanetScope absolute difference of pearson correlation grouped by management type")
 p
 
-ggsave(filename = "./images/5_Results_Planet_pearson.png", plot = p,
-       width = 3000, height = 2000, units = "px", dpi = 300)
+#ggsave(filename = "./images/5_Results_Planet_pearson.png", plot = p,
+#       width = 3000, height = 2000, units = "px", dpi = 300)
+
+calc_means <- function(df, dvs, ivs, type, value_col = abs_r) {
+  df %>%
+    filter(dependent_var %in% dvs,
+           independent_var %in% ivs,
+           Type %in% type) %>%
+    group_by(dependent_var, independent_var, Type) %>%
+    summarise(
+      mean = mean({{ value_col }}, na.rm = TRUE),
+      .groups = "drop"
+    )
+}
+
+veg_height <- plot_df %>%
+  filter(independent_var == "veg_height_cm")
+grasses <- plot_df %>%
+  filter(independent_var == "grasses")
+herbs <- plot_df %>%
+  filter(independent_var == "herbs")
+litter <- plot_df %>%
+  filter(independent_var == "litter")
+moss <- plot_df %>%
+  filter(independent_var == "moss")
+bare.soil <- plot_df %>%
+  filter(independent_var == "bare.soil")
+

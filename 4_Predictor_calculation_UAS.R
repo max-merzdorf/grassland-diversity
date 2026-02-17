@@ -1,3 +1,7 @@
+# Calculate all predictor variables for all UAS scenes at three different resolutions
+# > Resolutions are set by terra::aggregate()
+# > Factor 1 is native resolution (3 cm), Factor 2 is 6 cm and Factor 4 is 12 cm
+
 library(GLCMTextures)
 library(rasterdiv)
 library(terra)

@@ -11,7 +11,6 @@ library(gridExtra)
 source("./uav_multispectral_indices.R")
 
 ################################################################################
-##### PREPARE TABLES ###########################################################
 
 # table with all recorded species across all sites and all runs
 allspecies <- read.table("./data/_tables/All_runs_veg_londo.csv", sep=";", dec=".", header=T)
